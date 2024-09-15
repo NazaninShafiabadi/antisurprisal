@@ -3,5 +3,6 @@ matplotlib
 pandas
 scipy
 scikit-learn
+seaborn
 torch
 transformers
