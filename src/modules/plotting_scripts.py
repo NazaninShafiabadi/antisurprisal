@@ -249,10 +249,10 @@ def get_avg_df(dfs: List[pd.DataFrame], column: str):
 
 def plot_avg_pos_neg(positives, negatives):
     plt.style.use('ggplot')
-    plt.figure()
+    plt.figure(figsize=(3, 3))
 
-    pos_labels = ['Full Corpus (positive context)', 'Frequent Words (positive context)', 'Infrequent Words (positive context)']
-    neg_labels = ['Full Corpus (negative context)', 'Frequent Words (negative context)', 'Infrequent Words (negative context)']
+    pos_labels = ['Full Corpus (surprisal)', 'Frequent Words (surprisal)', 'Infrequent Words (surprisal)']
+    neg_labels = ['Full Corpus (antisurprisal)', 'Frequent Words (antisurprisal)', 'Infrequent Words (antisurprisal)']
     colors = ['purple', 'green', 'red']
 
     for i, df in enumerate(positives):
