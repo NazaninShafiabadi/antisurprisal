@@ -1,3 +1,5 @@
+This repository contains the source code for our paper entitled "Beyond Surprisal: A Dual Metric Framework for Lexical Skill Acquisition in LLMs"
+
 # Anti-surprisal
 A complementary metric to $surprisal$, measuring a model's capacity to refrain from using words in inappropriate or unexpected contexts.
 
