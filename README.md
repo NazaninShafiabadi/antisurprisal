@@ -42,7 +42,7 @@ The code in the `tokenize_dataset.py` and `word_evaluation.py` files are largely
 ## Analyses
 Aggregated at the corpus level, surprisal decreases smoothly as learning progresses, while anti-surprisal increases. This indicates that, on average, the probability of using words in appropriate contexts rises over the course of training, while the probability of inappropriate word use declines.
 
-![corpus_curves](URL)
+![corpus_curves](https://github.com/NazaninShafiabadi/antisurprisal/blob/main/img/corpus_surprisal.pdf)
 
 On the other hand, analyzing learning curves for individual words reveals that the tested model has highly variable learning dynamics from one word to the next. Examples of four carefully selected words, each with distinct learning trajectories representing all possible combinations of increasing or decreasing surprisal and anti-surprisal curves are presented below. 
 
