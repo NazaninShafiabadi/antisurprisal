@@ -6,8 +6,8 @@ Sample usage:
 
 python3 src/tokenize_dataset.py \
 --tokenizer="google/multiberts-seed_0" \
---input_file="data/wikitext/wikitext103_test.txt" \
---output_file="data/wikitext/wikitext103_tokenized.txt" \
+--input_file="data/raw/wikitext103_test.txt" \
+--output_file="data/processed/wikitext103_tokenized.txt" \
 --max_segments=2 --max_seq_len=-1
 
 """

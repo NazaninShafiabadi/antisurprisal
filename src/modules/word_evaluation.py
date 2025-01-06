@@ -1,18 +1,18 @@
 """
-Credits to Chang et al. (2022)
+Credits to Chang and Bergen (2022b)
 
-Evaluate language models (surprisal, accuracy, rank of correct prediction) for
-certain tokens.
+Evaluate language models (surprisal, antisurprisal, accuracy, rank of correct prediction) 
+for certain tokens.
 
 Sample usage:
 
 python3 src/modules/word_evaluation.py \
 --tokenizer="google/multiberts-seed_0" \
---wordbank_file="data/wikitext/wikitext_wordbank.tsv" \
---examples_file="data/wikitext/wikitext103_tokenized.txt" \
+--wordbank_file="data/processed/wikitext_wordbank.tsv" \
+--examples_file="data/processed/wikitext103_tokenized.txt" \
 --max_samples=512 \
 --batch_size=256 \
---output_file="results/bert_surprisals.txt" \
+--output_file="results/surp-antisurp.txt" \
 --model="google/multiberts-seed_0" --model_type="bert" \
 --save_samples="data/wikitext/sample_sents.pickle" \
 """
@@ -236,7 +236,7 @@ def evaluate_tokens(model, token_data, tokenizer, outfile,
         outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\n".format(
             curr_step, token, median_rank, mean_surprisal, std_surprisal, 
             mean_neg_surprisal, std_neg_surprisal, accuracy, num_examples))
-        # Save individual positive and negative surprisals if requested
+        # Save individual surprisals and antisurprisals if requested
         if args.save_indiv_surprisals != "":
             surprisals_list = surprisals.tolist()
             neg_surprisals_list = neg_surprisals.tolist()
@@ -249,7 +249,7 @@ def evaluate_tokens(model, token_data, tokenizer, outfile,
                  'Token': [token] * len(surprisals_list),
                  'Context': sample_sents,
                  'Surprisal': surprisals_list,
-                 'NegSurprisal': neg_surprisals_list
+                 'Antisurprisal': neg_surprisals_list
                  })
             # Append created DataFrame to the file
             indiv_surps_df.to_csv(args.save_indiv_surprisals, mode='a', header=False, index=False, sep='\t')
@@ -305,7 +305,7 @@ def main(args):
     # Prepare for evaluation.
     outfile = codecs.open(args.output_file, 'w', encoding='utf-8')
     # File header.
-    outfile.write("Steps\tToken\tMedianRank\tMeanSurprisal\tStdevSurprisal\tMeanNegSurprisal\tStdevNegSurprisal\tAccuracy\tNumExamples\n")
+    outfile.write("Steps\tToken\tMedianRank\tMeanSurprisal\tStdevSurprisal\tMeanAntisurprisal\tStdevAntisurprisal\tAccuracy\tNumExamples\n")
 
     if args.save_indiv_surprisals != "":
         indiv_surps = pd.DataFrame(columns=['Steps', 'Token', 'Context', 'Surprisal', 'NegSurprisal'])
