@@ -23,7 +23,7 @@ python3 src/tokenize_dataset.py \
 ```
 
 ## Word/token evaluation
-To collect surprisals and antisurprisals for individual tokens at each checkpoint:
+To collect surprisals and anti-surprisals for individual tokens at each checkpoint:
 ```
 python3 src/modules/word_evaluation.py \
 --tokenizer="google/multiberts-seed_0" \
