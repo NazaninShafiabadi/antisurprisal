@@ -1,4 +1,4 @@
-This repository contains the source code for our paper entitled "Beyond Surprisal: A Dual Metric Framework for Lexical Skill Acquisition in LLMs"
+This repository contains the source code for our paper "[Beyond Surprisal: A Dual Metric Framework for Lexical Skill Acquisition in LLMs](https://aclanthology.org/2025.coling-main.443.pdf)", which won the Best Short Paper Award at [COLING 2025](https://coling2025.org/program/best_papers/#best-short-paper-awards).
 
 # Anti-surprisal
 A complementary metric to $surprisal$, measuring a model's capacity to refrain from using words in inappropriate or unexpected contexts.
@@ -83,13 +83,30 @@ The data reveals that the vast majority of words fall into the category of decre
 We show that combining surprisal and anti-surprisal metrics offers a richer understanding of lexical skill acquisition in LLMs. These findings pave the way for more refined training and evaluation strategies in future research.
 
 ## Citation
-...
+*If you find this work useful, please cite our paper:*
 
+> **Beyond Surprisal: A Dual Metric Framework for Lexical Skill Acquisition in LLMs**  
+> Nazanin Shafiabadi, Guillaume Wisniewski  
+> *Proceedings of the 31st International Conference on Computational Linguistics (COLING 2025), Abu Dhabi, UAE*  
+> [ACL Anthology](https://aclanthology.org/2025.coling-main.443/)
 
-
-
-
-
-
-
-
+```bibtex
+@inproceedings{shafiabadi-wisniewski-2025-beyond,
+    title = "Beyond Surprisal: A Dual Metric Framework for Lexical Skill Acquisition in {LLM}s",
+    author = "Shafiabadi, Nazanin  and
+      Wisniewski, Guillaume",
+    editor = "Rambow, Owen  and
+      Wanner, Leo  and
+      Apidianaki, Marianna  and
+      Al-Khalifa, Hend  and
+      Eugenio, Barbara Di  and
+      Schockaert, Steven",
+    booktitle = "Proceedings of the 31st International Conference on Computational Linguistics",
+    month = jan,
+    year = "2025",
+    address = "Abu Dhabi, UAE",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.coling-main.443/",
+    pages = "6636--6641",
+    abstract = "Many studies have explored when and how LLMs learn to use specific words, primarily by examining their learning curves. While these curves capture a model`s capacity to use words correctly in context, they often neglect the equally important skill of avoiding incorrect usage. In this paper, we introduce a new metric, anti-surprisal, which measures a model`s capacity to refrain from using words in inappropriate or unexpected contexts. By examining both correct usage and error avoidance, we offer a more comprehensive perspective on the learning dynamics of LLMs."
+}
