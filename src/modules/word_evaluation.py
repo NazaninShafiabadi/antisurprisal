@@ -16,7 +16,6 @@ python3 src/modules/word_evaluation.py \
 --model="google/multiberts-seed_0" --model_type="bert" \
 --save_samples="data/processed/contexts.pickle" \
 """
-import gzip
 import os
 import sys
 import pandas as pd
@@ -32,6 +31,8 @@ from transformers import (
     AutoTokenizer
 )
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {DEVICE}")
 
 
 def create_parser():
@@ -124,16 +125,13 @@ def get_sample_sentences(tokenizer, wordbank_file, tokenized_examples_file,
 def prepare_tokenized_examples(tokenized_examples, tokenizer):
     # Convert into a tensor.
     tensor_examples = [torch.tensor(e, dtype=torch.long) for e in tokenized_examples]
-    input_ids = pad_sequence(tensor_examples, batch_first=True,
+    input_ids = pad_sequence(tensor_examples, 
+                             batch_first=True,
                              padding_value=tokenizer.pad_token_id)
     labels = input_ids.clone().detach()
     labels[labels == tokenizer.pad_token_id] = -100
     attention_mask = input_ids != tokenizer.pad_token_id
-    inputs = {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
-    if torch.cuda.is_available():
-        inputs["input_ids"] = inputs["input_ids"].cuda()
-        inputs["attention_mask"] = inputs["attention_mask"].cuda()
-        inputs["labels"] = inputs["labels"].cuda()
+    inputs = {"input_ids": input_ids.to(DEVICE), "attention_mask": attention_mask.to(DEVICE), "labels": labels.to(DEVICE)}
     return inputs
 
 
@@ -263,17 +261,11 @@ def load_single_model(single_model_dir, config, tokenizer, model_type='bert'):
         model = AutoModelForMaskedLM.from_pretrained(
             single_model_dir,
             config=config,
-        )
+        ).to(DEVICE)
         model.resize_token_embeddings(len(tokenizer))
     else:
         sys.exit('Currently only supporting bert-type models.')
 
-    # Load onto GPU.
-    if torch.cuda.is_available():
-        print("CUDA is available.")
-        model = model.cuda()
-    # if torch.cuda.device_count() > 1:
-    #     model = torch.nn.DataParallel(model)
     return model
 
 
