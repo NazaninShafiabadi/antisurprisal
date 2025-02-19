@@ -8,13 +8,13 @@ Sample usage:
 
 python3 src/modules/word_evaluation.py \
 --tokenizer="google/multiberts-seed_0" \
---wordbank_file="data/processed/wikitext_wordbank.tsv" \
+--wordbank_file="data/processed/wordbank.jsonl" \
 --examples_file="data/processed/wikitext103_tokenized.txt" \
 --max_samples=512 \
 --batch_size=256 \
 --output_file="results/surp-antisurp.txt" \
 --model="google/multiberts-seed_0" --model_type="bert" \
---save_samples="data/wikitext/sample_sents.pickle" \
+--save_samples="data/processed/contexts.pickle" \
 """
 import gzip
 import os
@@ -31,6 +31,7 @@ from transformers import (
     AutoConfig,
     AutoTokenizer
 )
+
 
 
 def create_parser():
