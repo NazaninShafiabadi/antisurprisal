@@ -139,19 +139,19 @@ def plot_surprisals(
                 print(f"Could not fit any model for the positive samples of word '{word}'")
 
         if neg_samples:
-            y_neg = word_data['MeanNegSurprisal'].values
+            y_neg = word_data['MeanAntisurprisal'].values
             
             # Plot negative surprisals
             if show_error_interval:
                 try:
-                    sns.lineplot(data=word_data, x='Steps', y='NegSurprisal', marker='o', color='indianred', 
+                    sns.lineplot(data=word_data, x='Steps', y='Antiurprisal', marker='o', color='indianred', 
                                  errorbar=('ci', 100), label='Negative Samples'if i == num_words - 1 else None, 
                                  ax=ax, legend=(i == num_words - 1))   
                 except Exception as e:
                     print(e)         
-                    ax.plot(word_data['Steps'], word_data['MeanNegSurprisal'], marker='o', color='indianred', label='Negative Samples')
+                    ax.plot(word_data['Steps'], word_data['MeanAntisurprisal'], marker='o', color='indianred', label='Negative Samples')
             else:
-                ax.plot(word_data['Steps'], word_data['MeanNegSurprisal'], marker='o', color='indianred', label='Negative Samples')
+                ax.plot(word_data['Steps'], word_data['MeanAntisurprisal'], marker='o', color='indianred', label='Negative Samples')
             
             if convergence:
                 highest_antisurprisal = max(y_neg)
@@ -181,7 +181,7 @@ def plot_surprisals(
             # Calculate correlation
             if not first_step:
                 word_data = word_data[word_data['Steps'] != 0]                
-            corr, _ = pearsonr(word_data['MeanSurprisal'], word_data['MeanNegSurprisal'])
+            corr, _ = pearsonr(word_data['MeanSurprisal'], word_data['MeanAntisurprisal'])
             correlations[word] = corr
             ax.set_title(f'"{word}"', pad=18)
             ax.text(0.5, 1.02, f'Pos-Neg Correlation: {corr:.2f}', fontsize=10, ha='center', transform=ax.transAxes)
@@ -275,7 +275,7 @@ def plot_avg_pos_neg(positives, negatives, save_as=None):
         plt.plot(df.Steps, df['MeanSurprisal'], marker='o', color=colors[i] if len(positives) > 1 else 'green', label=pos_labels[i])
     
     for i, df in enumerate(negatives):
-        plt.plot(df.Steps, df['MeanNegSurprisal'], marker='o', color=colors[i] if len(negatives) > 1 else 'red', alpha= 0.3, label=neg_labels[i])
+        plt.plot(df.Steps, df['MeanAntisurprisal'], marker='o', color=colors[i] if len(negatives) > 1 else 'red', alpha= 0.3, label=neg_labels[i])
 
     # plt.gca().invert_yaxis()
     # plt.xscale('log')

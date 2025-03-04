@@ -9,15 +9,16 @@ Sample usage:
 python3 src/modules/word_evaluation.py \
 --tokenizer="google/multiberts-seed_0" \
 --wordbank_file="data/processed/wordbank.jsonl" \
---examples_file="data/processed/wikitext103_tokenized.txt" \
+--examples_file="data/processed/sent_pairs.txt" \
 --max_samples=512 \
---batch_size=256 \
+--batch_size=128 \
 --output_file="results/surp-antisurp.txt" \
 --model="google/multiberts-seed_0" --model_type="bert" \
 --save_samples="data/processed/contexts.pickle" \
 """
 import os
 import sys
+import string
 import pandas as pd
 import pickle
 import argparse
@@ -61,12 +62,30 @@ def create_parser():
     return parser
 
 
-def get_sample_sentences(tokenizer, wordbank_file, tokenized_examples_file,
+def read_data_to_df(file_path):
+    if file_path.endswith('.csv'):
+        df = pd.read_csv(file_path, sep='\t')
+    elif file_path.endswith('.json'):
+        df = pd.read_json(file_path)
+    elif file_path.endswith('.jsonl'):
+        df = pd.read_json(file_path, lines=True)
+    else:
+        print(f"Unsupported file format: {file_path}")
+        return
+    return df
+
+
+def get_sample_sentences(tokenizer, wordbank_file, examples_file,
                          max_seq_len, min_seq_len, max_samples, bidirectional=True):
+    """
+    examples_file contains untokenized sentences, max_segments per line, with CLS and SEP tokens.
+    """
     # Each entry of token data is a tuple of token, token_id, masked_sample_sentences, masked_negative_sample_sentences.
     token_data = []
+    # The masked token in the negative samples should not be one of these special tokens
+    special_tokens = ['[CLS]', '[SEP]'] + list(string.punctuation)
     # Load words.
-    df = pd.read_csv(wordbank_file, sep='\t').dropna().reset_index(drop=True)
+    df = read_data_to_df(wordbank_file).dropna().reset_index(drop=True)
     wordbank_tokens = df.token.unique().tolist()
     # Get token ids.
     for token in wordbank_tokens:
@@ -74,24 +93,25 @@ def get_sample_sentences(tokenizer, wordbank_file, tokenized_examples_file,
         if token_id != tokenizer.unk_token_id:
             token_data.append(tuple([token, token_id, [], []]))
     # Load sentences.
-    print(f"Loading sentences from {tokenized_examples_file}.")
-    infile = codecs.open(tokenized_examples_file, 'rb', encoding='utf-8')
+    print(f"Loading sentences from {examples_file}.")
+    infile = codecs.open(examples_file, 'rb', encoding='utf-8')
     for line_count, line in enumerate(infile):
         if line_count % 100000 == 0:
             print("Finished line {}.".format(line_count))
         example_string = line.strip()
-        example = [int(token_id) for token_id in example_string.split()]
+        # example = [int(token_id) for token_id in example_string.split()]
+        example_tokens = example_string.split()
         # Use the pair of sentences (instead of individual sentences), to have
         # longer sequences. Also more similar to training.
-        if len(example) < min_seq_len:
+        if len(example_tokens) < min_seq_len:
             continue
-        if len(example) > max_seq_len:
-            example = example[:max_seq_len]
+        if len(example_tokens) > max_seq_len:
+            example_tokens = example_tokens[:max_seq_len]
         for token, token_id, positive_samples, negative_samples in token_data:
             if len(positive_samples) >= max_samples:
                 # This token already has enough sentences.
                 continue
-            token_indices = [index for index, curr_id in enumerate(example) if curr_id == token_id]
+            token_indices = [index for index, curr in enumerate(example_tokens) if curr.lower() == token]
             # Warning: in bidirectional contexts, the mask can be in the first or last position,
             # which can cause no mask prediction to be made for the biLSTM.
             if not bidirectional:
@@ -99,17 +119,22 @@ def get_sample_sentences(tokenizer, wordbank_file, tokenized_examples_file,
                 # The sequence length (including the target token) must be at least min_seq_len.
                 token_indices = [index for index in token_indices if index >= min_seq_len-1]
             if len(token_indices) > 0:
-                positive_example = example.copy()
+                positive_example = example_tokens.copy()
                 mask_idx = random.choice(token_indices)
-                positive_example[mask_idx] = tokenizer.mask_token_id
-                positive_samples.append(positive_example)
+                positive_example[mask_idx] = tokenizer.mask_token
+                positive_example_string = ' '.join(positive_example)
+                positive_example_tokenized = tokenizer.encode(positive_example_string, add_special_tokens=False)
                 # For every positive sample, we also save a negative sample.
-                other_indices = [index for index, curr_id in enumerate(example) if curr_id != token_id]
+                other_indices = [index for index, curr in enumerate(example_tokens) if curr.lower() != token and not curr in special_tokens]
                 if len(other_indices) > 0:
-                    negative_example = example.copy()
+                    # Save the positive sample only if there can also be a corresponding negative sample
+                    positive_samples.append(positive_example_tokenized)
+                    negative_example = example_tokens.copy()
                     neg_mask_idx = random.choice(other_indices)
-                    negative_example[neg_mask_idx] = tokenizer.mask_token_id # Masking another random token within the sequence
-                    negative_samples.append(negative_example)
+                    negative_example[neg_mask_idx] = tokenizer.mask_token # Masking another random token within the sequence
+                    negative_example_string = ' '.join(negative_example)
+                    negative_example_tokenized = tokenizer.encode(negative_example_string, add_special_tokens=False)
+                    negative_samples.append(negative_example_tokenized)
     infile.close()
     # Logging.
     for token, token_id, positive_samples, _ in token_data:
@@ -159,7 +184,6 @@ def run_model(model, examples, batch_size, tokenizer):
     model.eval()
     with torch.no_grad():
         eval_logits = []
-        model_outputs = []
         for batch_i in range(len(batches)):
             inputs = prepare_tokenized_examples(batches[batch_i], tokenizer)
             # Run model.
@@ -184,7 +208,7 @@ def run_model(model, examples, batch_size, tokenizer):
         print("WARNING: length of logits {0} does not equal number of examples {1}!!".format(
             all_eval_logits.shape[0], len(examples)
         ))
-    return all_eval_logits, model_outputs
+    return all_eval_logits
 
 
 # Run token evaluations for a single model.
@@ -290,8 +314,7 @@ def main(args):
         print(f"Getting sample sentences from {args.wordbank_file}.")
         token_data = get_sample_sentences(
             tokenizer, args.wordbank_file, args.examples_file, max_seq_len, 
-            args.min_seq_len, args.max_samples, bidirectional=bidirectional,
-            inflections=args.inflections)
+            args.min_seq_len, args.max_samples, bidirectional=bidirectional)
         if args.save_samples != "":
             pickle.dump(token_data, open(args.save_samples, "wb"))
 

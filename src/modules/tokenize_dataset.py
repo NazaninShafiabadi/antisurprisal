@@ -4,10 +4,10 @@ Creates a text file where each line is a space-separated list of token ids.
 Adds [CLS] and [SEP] tokens, but no padding.
 Sample usage:
 
-python3 src/tokenize_dataset.py \
+python3 src/modules/tokenize_dataset.py \
 --tokenizer="google/multiberts-seed_0" \
 --input_file="data/raw/wikitext103_test.txt" \
---output_file="data/processed/wikitext103_tokenized.txt" \
+--output_file="data/processed/sent_pairs.txt" \
 --max_segments=2 --max_seq_len=-1
 
 """
@@ -56,9 +56,9 @@ def split_into_sentences(text):
 def tokenize_file(input_path, output_path, tokenizer,
                   max_examples, max_segments, max_seq_len):
     print("Tokenizing file: {}".format(input_path))
-    cls_token_id = tokenizer.cls_token_id
-    sep_token_id = tokenizer.sep_token_id
-    if cls_token_id is None or sep_token_id is None:
+    cls_token = tokenizer.cls_token
+    sep_token = tokenizer.sep_token
+    if cls_token is None or sep_token is None:
         print("Warning: [CLS] or [SEP] token does not exist.")
     
     if os.path.isfile(output_path):
@@ -70,26 +70,26 @@ def tokenize_file(input_path, output_path, tokenizer,
     example_count = 0
     line_count = 0
     stored_sents = []
-    curr_example = [cls_token_id]
+    curr_example = [cls_token]
     curr_n_segments = 0
     for sentence in sentences:
         line_count += 1
-        stripped_sent = sentence.strip()
-        if stripped_sent != '':
-            stored_sents.append(stripped_sent)
+        tokenized_sent = tokenizer.tokenize(sentence.strip())
+        if len(tokenized_sent) > 0:
+            stored_sents.append(tokenized_sent)
         # Process the currently stored sentences.
         if line_count % MAX_STORED_LINE_COUNT == 0:
-            batch_encoding = tokenizer(stored_sents, add_special_tokens=False, truncation=True, max_length=max_seq_len)
-            for tokenized_sent in batch_encoding["input_ids"]:
-                curr_example = curr_example + tokenized_sent + [sep_token_id]
+            # batch_encoding = tokenizer(stored_sents, add_special_tokens=False, truncation=True, max_length=max_seq_len)
+            for sent in stored_sents:
+                curr_example = curr_example + sent + [sep_token]
                 curr_n_segments += 1
                 if len(curr_example) >= max_seq_len or curr_n_segments >= max_segments:
                     # Process an example.
                     curr_example = curr_example[:max_seq_len]
                     # Note that these examples are unpadded.
-                    outfile.write(" ".join(str(token_id) for token_id in curr_example))
+                    outfile.write(' '.join(curr_example).replace(' ##', ''))
                     outfile.write('\n')
-                    curr_example = [cls_token_id]
+                    curr_example = [cls_token]
                     curr_n_segments = 0
                     example_count += 1
                     if example_count >= max_examples:
@@ -102,17 +102,17 @@ def tokenize_file(input_path, output_path, tokenizer,
     infile.close()
     # Process the remaining set of lines. This is copied from above for maximal bad code style!
     if len(stored_sents) > 0:
-        batch_encoding = tokenizer(stored_sents, add_special_tokens=False, truncation=True, max_length=max_seq_len)
-        for tokenized_sent in batch_encoding["input_ids"]:
-            curr_example = curr_example + tokenized_sent + [sep_token_id]
+        # batch_encoding = tokenizer(stored_sents, add_special_tokens=False, truncation=True, max_length=max_seq_len)
+        for sent in stored_sents:
+            curr_example = curr_example + sent + [sep_token]
             curr_n_segments += 1
             if len(curr_example) >= max_seq_len or curr_n_segments >= max_segments:
                 # Process an example.
                 curr_example = curr_example[:max_seq_len]
                 # Note that these examples are unpadded.
-                outfile.write(" ".join(str(token_id) for token_id in curr_example))
+                outfile.write(' '.join(curr_example).replace(' ##', ''))
                 outfile.write('\n')
-                curr_example = [cls_token_id]
+                curr_example = [cls_token]
                 curr_n_segments = 0
                 example_count += 1
                 if example_count >= max_examples:
