@@ -3,5 +3,6 @@
 results/
 
 draft.ipynb
+analysis.ipynb
 
 tokenizer_cache/

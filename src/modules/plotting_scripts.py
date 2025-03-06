@@ -1,18 +1,24 @@
 """ Contains the functions needed for analyzing learning curves. """
 
 import math
+from itertools import cycle
 from typing import List, Dict
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
+
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib import gridspec
+
 from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
-import seaborn as sns
+
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-
+####################################################################################################
 
 def fit_linear(X:np.ndarray, y:np.ndarray, first_step=True) -> Dict[str, float]:
     if not first_step:
@@ -70,12 +76,29 @@ def select_best_model(x, y):
 
 
 def plot_surprisals(
-        words:List[str], surprisals_df, show_error_interval=False, neg_samples=False, 
+        words:List[str], surprisals_df, show_error_interval=False, plot_antisurprisal=True, 
         first_step=True, fit_line=False, fit_curve=False, convergence=False, 
-        print_slope=False, legend=True, return_outputs=False, save_as=None):
+        print_slope=False, legend=True, return_outputs=False, save_as:str=None):
     """ 
-    If first_step is set to False, neither the correlations nor the linear model will consider 
-    the first step, but the first step will still be shown on the plot.
+    Plots surprisal curves for a list of words based on the given dataframe. 
+    Optionally, fits linear models, best curves, and marks convergence points.
+
+    Parameters:
+    - words (List[str]): List of words to plot.
+    - surprisals_df (pd.DataFrame): DataFrame containing surprisal values with columns ['Token', 'Steps', 'MeanSurprisal', 'MeanAntisurprisal'].
+    - show_error_interval (bool): If True, displays confidence intervals around the curves.
+    - plot_antisurprisal (bool): If True, plots antisurprisal curve in addition to surprisal.
+    - first_step (bool): If False, excludes the first step from correlation and linear fitting calculations but still shows it on the plot.
+    - fit_line (bool): If True, fits a linear regression line to the surprisal and/or antisurprisal curves.
+    - fit_curve (bool): If True, fits the best nonlinear curve to the surprisal and/or antisurprisal curves.
+    - convergence (bool): If True, marks the step where surprisal reaches its lowest value and antisurprisal its highest.
+    - print_slope (bool): If True, displays the slope (α) of the fitted linear model.
+    - legend (bool): If True, includes a legend in the plot.
+    - return_outputs (bool): If True, returns correlation values and fitting metrics.
+    - save_as (str, optional): If provided, saves the plot as a PDF file with the given filename.
+
+    Returns:
+    - dict: If return_outputs=True, returns a dictionary of correlation values and fitting metrics for each word.
     """
     num_words = len(words)
     cols = min(num_words, 3)
@@ -138,7 +161,7 @@ def plot_surprisals(
             else:
                 print(f"Could not fit any model for the positive samples of word '{word}'")
 
-        if neg_samples:
+        if plot_antisurprisal:
             y_neg = word_data['MeanAntisurprisal'].values
             
             # Plot negative surprisals
@@ -218,39 +241,133 @@ def plot_surprisals(
 
     if return_outputs:
         return correlations, all_metrics    
+
+####################################################################################################
+
+def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False, 
+                    plot_differences: bool = False, save_as: str = None):
+    """
+    Plots surprisal and antisurprisal curves for given words, with options for correlation 
+    computation and pairwise difference visualization.
+
+    Parameters:
+    -----------
+    words : List[str]
+        A list of words to plot surprisal and antisurprisal curves for.
     
-
-def plot_all_in_one(words:List[str], surprisals_df):
+    surprisals_df : DataFrame
+        A pandas DataFrame containing columns:
+        - 'Token': the word,
+        - 'Steps': the x-axis values,
+        - 'MeanSurprisal': surprisal values,
+        - 'MeanAntisurprisal': antisurprisal values.
+    
+    compute_corr : bool, optional
+        If True, computes and displays the mean Pearson correlation between surprisal and 
+        antisurprisal curves. Default is False.
+    
+    plot_differences : bool, optional
+        If True, plots pairwise differences between surprisal and antisurprisal curves in 
+        a second subplot. Default is False.
+    
+    save_as : str, optional
+        If provided, saves the figure as a PDF with the specified filename. Default is None.
+    """
     plt.style.use('ggplot')
-    plt.figure(figsize=(4, 3.5))
+    
+    if plot_differences:
+        fig = plt.figure(figsize=(10.5, 3.5))
+        gs = gridspec.GridSpec(1, 2)
+        ax1 = fig.add_subplot(gs[0])
+        ax2 = fig.add_subplot(gs[1])
+    else:
+        fig, ax1 = plt.subplots(figsize=(5.3, 3.5))
+    
+    num_words = len(words)
+    surprisal_colors = cm.Greens(np.linspace(0.8, 1, num_words))  # Shades of green
+    antisurprisal_colors = cm.Reds(np.linspace(0.8, 1, num_words))  # Shades of red
 
-    max_x = 0
+    markers = cycle(['o', 'x', '*', 'O', 'X', '<', '>', '~'])
+
+    # Store surprisal and antisurprisal values for correlation computation
+    surprisal_curves = []
+    antisurprisal_curves = []
 
     for i, word in enumerate(words):   
+        marker = next(markers)
+
         word_data = surprisals_df[surprisals_df['Token'] == word]
         if word_data.empty:
             print(f'No data found for the word "{word}"')
             continue
 
-        line, = plt.plot(word_data['Steps'], word_data['MeanSurprisal'], marker='o', alpha=0.7)
+        # Store data for correlation
+        if compute_corr:
+            surprisal_curves.append(word_data['MeanSurprisal'].values)
+            antisurprisal_curves.append(word_data['MeanAntisurprisal'].values)
 
-        # annotate the end of the line
-        x = word_data['Steps'].iloc[-1]
-        y = word_data['MeanSurprisal'].iloc[-1]
-        plt.annotate(word, (x, y), textcoords='offset points', xytext=(+10,+0), color=line.get_color())
+        # Plot surprisal and antisurprisal curves on the first subplot (ax1)
+        ax1.plot(word_data['Steps'], word_data['MeanSurprisal'], 
+                 marker=marker, alpha=0.7, color=surprisal_colors[i], label=f'{word} (S)')
+        ax1.plot(word_data['Steps'], word_data['MeanAntisurprisal'], 
+                 marker=marker, alpha=0.7, color=antisurprisal_colors[i], label=f'{word} (AS)')
 
-        max_x = max(max_x, x)
+    legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+    legend_bg_color = legend.get_frame().get_facecolor()
+    legend_edge_color = legend.get_frame().get_edgecolor()
+    
+    # Compute correlation and/or difference curves (if enabled)
+    if (plot_differences or compute_corr) and len(surprisal_curves) > 1:
+        surprisal_matrix = np.array(surprisal_curves)
+        antisurprisal_matrix = np.array(antisurprisal_curves)
 
-    xlim = plt.gca().get_xlim()
-    plt.gca().set_xlim(xlim[0], max_x * 1.3)  # increase the maximum x value by 30%
+        steps = surprisals_df['Steps'].unique()
 
-    # plt.title('All Words')
-    plt.xlabel('Steps')
-    plt.ylabel('Mean surprisal')
-    # plt.gca().invert_yaxis()
+        surprisal_corrs = []
+        antisurprisal_corrs = []
+        
+        for i in range(len(surprisal_curves)):
+            for j in range(i + 1, len(surprisal_curves)):
+                
+                if plot_differences:
+                    # Pairwise differences between surprisal & antisurprisal curves
+                    surprisal_diff = np.abs(surprisal_matrix[i] - surprisal_matrix[j])
+                    antisurprisal_diff = np.abs(antisurprisal_matrix[i] - antisurprisal_matrix[j])
+                    # Plot surprisal differences on ax2
+                    ax2.plot(steps, surprisal_diff, linestyle="-", color="green", alpha=0.6, label=f'Surprisal diff')
+                    # Plot antisurprisal differences on ax2
+                    ax2.plot(steps, antisurprisal_diff, linestyle="-", color="red", alpha=0.6, label=f'Antisurprisal diff')
+
+                if compute_corr:
+                    # Correlation between surprisal curves and antisurprisal curves
+                    surprisal_corrs.append(pearsonr(surprisal_matrix[i], surprisal_matrix[j])[0])
+                    antisurprisal_corrs.append(pearsonr(antisurprisal_matrix[i], antisurprisal_matrix[j])[0])
+
+        if compute_corr:
+            mean_surprisal_corr = np.mean(surprisal_corrs)
+            mean_antisurprisal_corr = np.mean(antisurprisal_corrs)
+            ax1.text(1.09, 0.5, f"Corr (S) = {mean_surprisal_corr:.2f}\nCorr (AS) = {mean_antisurprisal_corr:.2f}", 
+                     transform=ax1.transAxes, fontsize=9, 
+                     bbox=dict(facecolor=legend_bg_color, edgecolor=legend_edge_color, boxstyle='round,pad=0.5'))
+
+    # Setting axes limits and labels
+    ax1.set_xlabel('Steps')
+    ax1.set_ylabel('Mean surprisal')
+
+    if plot_differences:
+        ax2.set_xlabel('Steps')
+        ax2.set_ylabel('Differences')
+        ax2.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left')   
+
     plt.tight_layout()
+
+    if save_as:
+        plt.savefig(save_as, format='pdf', bbox_inches='tight')
+        print(f"Figure saved to {save_as}") 
+
     plt.show()
 
+####################################################################################################
 
 def get_avg_df(dfs: List[pd.DataFrame], column: str):
     avg_dfs = []
@@ -262,6 +379,7 @@ def get_avg_df(dfs: List[pd.DataFrame], column: str):
         avg_dfs.append(avg)
     return avg_dfs
 
+####################################################################################################
 
 def plot_avg_pos_neg(positives, negatives, save_as=None):
     plt.style.use('ggplot')

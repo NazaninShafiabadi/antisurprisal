@@ -12,9 +12,10 @@ python3 src/modules/word_evaluation.py \
 --examples_file="data/processed/sent_pairs.txt" \
 --max_samples=512 \
 --batch_size=128 \
---output_file="results/surp-antisurp.txt" \
+--output_file="results/surp_antisurp.txt" \
 --model="google/multiberts-seed_0" --model_type="bert" \
 --save_samples="data/processed/contexts.pickle" \
+--save_indiv_surprisals="results/indiv_surp_antisurp.txt"
 """
 import os
 import sys
