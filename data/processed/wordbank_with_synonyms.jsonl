@@ -1,0 +1,193 @@
+{"token":"role","token_id":2535,"count":57,"synonym":"character","POS":["NOUN","PROPN"]}
+{"token":"which","token_id":2029,"count":623,"synonym":"what","POS":["DET"]}
+{"token":"story","token_id":2466,"count":39,"synonym":"tale","POS":["NOUN","PROPN"]}
+{"token":"to","token_id":2000,"count":4766,"synonym":"nan","POS":["ADP","PART","PROPN"]}
+{"token":"to","token_id":2000,"count":4766,"synonym":"nan","POS":["ADP","PART","PROPN"]}
+{"token":"two","token_id":2048,"count":428,"synonym":"a pair of","POS":["NUM","PROPN"]}
+{"token":"two","token_id":2048,"count":428,"synonym":"a pair of","POS":["NUM","PROPN"]}
+{"token":"quiet","token_id":4251,"count":2,"synonym":"silent","POS":["ADJ"]}
+{"token":"bizarre","token_id":13576,"count":2,"synonym":"odd","POS":["ADJ"]}
+{"token":"there","token_id":2045,"count":222,"synonym":"nan","POS":["PRON","ADV"]}
+{"token":"set","token_id":2275,"count":69,"synonym":"programmed","POS":["VERB","NOUN","ADJ","PROPN"]}
+{"token":"set","token_id":2275,"count":69,"synonym":"programmed","POS":["VERB","NOUN","ADJ","PROPN"]}
+{"token":"whole","token_id":2878,"count":16,"synonym":"entire","POS":["NOUN","ADJ"]}
+{"token":"were","token_id":2020,"count":1085,"synonym":"nan","POS":["AUX"]}
+{"token":"were","token_id":2020,"count":1085,"synonym":"nan","POS":["AUX"]}
+{"token":"almost","token_id":2471,"count":43,"synonym":"nearly","POS":["ADV"]}
+{"token":"almost","token_id":2471,"count":43,"synonym":"nearly","POS":["ADV"]}
+{"token":"hung","token_id":5112,"count":11,"synonym":"placed","POS":["VERB","PROPN"]}
+{"token":"liable","token_id":20090,"count":2,"synonym":"responsible","POS":["ADJ"]}
+{"token":"altogether","token_id":10462,"count":5,"synonym":"a completely","POS":["ADV"]}
+{"token":"than","token_id":2084,"count":194,"synonym":"compared to","POS":["ADP"]}
+{"token":"most","token_id":2087,"count":262,"synonym":"majority of","POS":["ADV","ADJ","PROPN"]}
+{"token":"most","token_id":2087,"count":262,"synonym":"Much","POS":["ADV","ADJ","PROPN"]}
+{"token":"reign","token_id":5853,"count":30,"synonym":"period of rule","POS":["NOUN"]}
+{"token":"born","token_id":2141,"count":38,"synonym":"nan","POS":["VERB"]}
+{"token":"except","token_id":3272,"count":18,"synonym":"bar","POS":["SCONJ"]}
+{"token":"later","token_id":2101,"count":218,"synonym":"nan","POS":["ADV","ADJ"]}
+{"token":"capital","token_id":3007,"count":28,"synonym":"principal city","POS":["NOUN","PROPN"]}
+{"token":"too","token_id":2205,"count":54,"synonym":"as well","POS":["ADV"]}
+{"token":"too","token_id":2205,"count":54,"synonym":"as well","POS":["ADV"]}
+{"token":"already","token_id":2525,"count":36,"synonym":"previously","POS":["ADV"]}
+{"token":"heard","token_id":2657,"count":9,"synonym":"perceived","POS":["VERB"]}
+{"token":"new","token_id":2047,"count":276,"synonym":"recent","POS":["ADJ","PROPN"]}
+{"token":"bear","token_id":4562,"count":5,"synonym":"carry","POS":["VERB","PROPN"]}
+{"token":"advice","token_id":6040,"count":10,"synonym":"counsel","POS":["NOUN"]}
+{"token":"their","token_id":2037,"count":466,"synonym":"nan","POS":["PRON"]}
+{"token":"here","token_id":2182,"count":26,"synonym":"nan","POS":["ADV"]}
+{"token":"historical","token_id":3439,"count":12,"synonym":"ancient","POS":["ADJ","PROPN"]}
+{"token":"effect","token_id":3466,"count":23,"synonym":"nan","POS":["VERB","NOUN"]}
+{"token":"found","token_id":2179,"count":127,"synonym":"discovered","POS":["VERB"]}
+{"token":"quite","token_id":3243,"count":7,"synonym":"very","POS":["DET","ADV"]}
+{"token":"desert","token_id":5532,"count":7,"synonym":"wasteland","POS":["NOUN","PROPN"]}
+{"token":"manner","token_id":5450,"count":12,"synonym":"way","POS":["NOUN"]}
+{"token":"describe","token_id":6235,"count":7,"synonym":"portray","POS":["VERB"]}
+{"token":"describe","token_id":6235,"count":7,"synonym":"depict","POS":["VERB"]}
+{"token":"piece","token_id":3538,"count":9,"synonym":"segment","POS":["NOUN"]}
+{"token":"aesthetic","token_id":12465,"count":2,"synonym":"artistic","POS":["ADJ"]}
+{"token":"peak","token_id":4672,"count":50,"synonym":"summit","POS":["VERB","NOUN","ADJ","PROPN"]}
+{"token":"seen","token_id":2464,"count":53,"synonym":"observed","POS":["VERB"]}
+{"token":"perspective","token_id":7339,"count":5,"synonym":"view","POS":["NOUN"]}
+{"token":"then","token_id":2059,"count":129,"synonym":"afterward","POS":["ADV"]}
+{"token":"adapt","token_id":15581,"count":4,"synonym":"adjust","POS":["VERB"]}
+{"token":"adapt","token_id":15581,"count":4,"synonym":"adjust","POS":["VERB"]}
+{"token":"home","token_id":2188,"count":88,"synonym":"navigate","POS":["NOUN","ADV","PROPN"]}
+{"token":"road","token_id":2346,"count":149,"synonym":"path","POS":["NOUN","PROPN"]}
+{"token":"week","token_id":2733,"count":72,"synonym":"nan","POS":["NOUN","PROPN"]}
+{"token":"fourth","token_id":2959,"count":50,"synonym":"nan","POS":["ADV","ADJ","PROPN"]}
+{"token":"rise","token_id":4125,"count":14,"synonym":"ascend","POS":["VERB","NOUN"]}
+{"token":"presence","token_id":3739,"count":27,"synonym":"demeanor","POS":["NOUN"]}
+{"token":"sometimes","token_id":2823,"count":22,"synonym":"occasionally","POS":["ADV"]}
+{"token":"sometimes","token_id":2823,"count":22,"synonym":"occasionally","POS":["ADV"]}
+{"token":"forward","token_id":2830,"count":31,"synonym":"nan","POS":["ADP","ADV","ADJ"]}
+{"token":"severe","token_id":5729,"count":17,"synonym":"intense","POS":["ADJ"]}
+{"token":"meet","token_id":3113,"count":10,"synonym":"convene","POS":["VERB"]}
+{"token":"meet","token_id":3113,"count":10,"synonym":"convene","POS":["VERB"]}
+{"token":"latter","token_id":3732,"count":41,"synonym":"second","POS":["NOUN","ADJ","PROPN"]}
+{"token":"aide","token_id":14895,"count":3,"synonym":"assistant","POS":["NOUN"]}
+{"token":"sail","token_id":9498,"count":7,"synonym":"navigate","POS":["VERB","NOUN","PROPN"]}
+{"token":"course","token_id":2607,"count":20,"synonym":"path","POS":["NOUN","ADV","PROPN"]}
+{"token":"wave","token_id":4400,"count":10,"synonym":"greet","POS":["NOUN"]}
+{"token":"badly","token_id":6649,"count":18,"synonym":"assistance desperately","POS":["ADV"]}
+{"token":"loose","token_id":6065,"count":5,"synonym":"nan","POS":["ADJ"]}
+{"token":"consecutive","token_id":5486,"count":22,"synonym":"subsequent","POS":["ADJ"]}
+{"token":"whether","token_id":3251,"count":13,"synonym":"nan","POS":["SCONJ"]}
+{"token":"taught","token_id":4036,"count":4,"synonym":"instructed","POS":["VERB"]}
+{"token":"rain","token_id":4542,"count":17,"synonym":"precipitation","POS":["NOUN"]}
+{"token":"weather","token_id":4633,"count":14,"synonym":"conditions","POS":["NOUN","PROPN"]}
+{"token":"break","token_id":3338,"count":23,"synonym":"shatter","POS":["VERB","NOUN","PROPN"]}
+{"token":"assistance","token_id":5375,"count":6,"synonym":"help","POS":["NOUN"]}
+{"token":"corps","token_id":3650,"count":38,"synonym":"military branch","POS":["NOUN","PROPN"]}
+{"token":"continuous","token_id":7142,"count":5,"synonym":"unending","POS":["ADJ"]}
+{"token":"regiment","token_id":3483,"count":58,"synonym":"unit","POS":["NOUN","PROPN"]}
+{"token":"site","token_id":2609,"count":36,"synonym":"location","POS":["NOUN","PROPN"]}
+{"token":"principal","token_id":4054,"count":19,"synonym":"head","POS":["ADJ","PROPN"]}
+{"token":"straight","token_id":3442,"count":30,"synonym":"direct","POS":["ADV","ADJ","PROPN"]}
+{"token":"hole","token_id":4920,"count":3,"synonym":"opening","POS":["NOUN"]}
+{"token":"rifle","token_id":5883,"count":3,"synonym":"rummaged","POS":["NOUN","PROPN"]}
+{"token":"plane","token_id":4946,"count":8,"synonym":"flat","POS":["NOUN"]}
+{"token":"aid","token_id":4681,"count":27,"synonym":"assistance","POS":["VERB","NOUN"]}
+{"token":"anyone","token_id":3087,"count":8,"synonym":"No one","POS":["PRON"]}
+{"token":"weak","token_id":5410,"count":16,"synonym":"feeble","POS":["ADJ"]}
+{"token":"reality","token_id":4507,"count":5,"synonym":"the truth","POS":["NOUN"]}
+{"token":"sure","token_id":2469,"count":8,"synonym":"convinced","POS":["ADJ"]}
+{"token":"scene","token_id":3496,"count":51,"synonym":"area","POS":["NOUN"]}
+{"token":"vicious","token_id":13925,"count":1,"synonym":"savage","POS":["ADJ"]}
+{"token":"shore","token_id":5370,"count":8,"synonym":"waterside","POS":["NOUN"]}
+{"token":"lesson","token_id":10800,"count":1,"synonym":"teaching","POS":["NOUN"]}
+{"token":"versus","token_id":6431,"count":3,"synonym":"against","POS":["ADP"]}
+{"token":"board","token_id":2604,"count":22,"synonym":"plank","POS":["VERB","NOUN","PROPN"]}
+{"token":"roll","token_id":4897,"count":8,"synonym":"Rotate","POS":["NOUN","PROPN"]}
+{"token":"always","token_id":2467,"count":28,"synonym":"invariably","POS":["ADV"]}
+{"token":"adopt","token_id":11092,"count":6,"synonym":"take in","POS":["VERB"]}
+{"token":"adopt","token_id":11092,"count":6,"synonym":"take in","POS":["VERB"]}
+{"token":"plain","token_id":5810,"count":12,"synonym":"simple","POS":["NOUN","ADV","ADJ","PROPN"]}
+{"token":"besides","token_id":4661,"count":4,"synonym":"moreover","POS":["SCONJ","ADV"]}
+{"token":"write","token_id":4339,"count":7,"synonym":"pen","POS":["VERB"]}
+{"token":"soul","token_id":3969,"count":5,"synonym":"spirit","POS":["NOUN"]}
+{"token":"belief","token_id":6772,"count":12,"synonym":"conviction","POS":["NOUN"]}
+{"token":"flare","token_id":17748,"count":1,"synonym":"intensify","POS":["VERB"]}
+{"token":"sit","token_id":4133,"count":5,"synonym":"settle","POS":["VERB","NOUN"]}
+{"token":"believe","token_id":2903,"count":8,"synonym":"think","POS":["VERB"]}
+{"token":"affect","token_id":7461,"count":1,"synonym":"influence","POS":["NOUN"]}
+{"token":"seem","token_id":4025,"count":10,"synonym":"appear","POS":["VERB"]}
+{"token":"diverse","token_id":7578,"count":4,"synonym":"varied","POS":["ADJ"]}
+{"token":"alternatively","token_id":14084,"count":5,"synonym":"Otherwise","POS":["ADV"]}
+{"token":"hear","token_id":2963,"count":3,"synonym":"listen to","POS":["VERB"]}
+{"token":"shear","token_id":18330,"count":25,"synonym":"clip","POS":["NOUN","ADJ"]}
+{"token":"apart","token_id":4237,"count":7,"synonym":"distant","POS":["ADP","ADV"]}
+{"token":"raise","token_id":5333,"count":4,"synonym":"increase","POS":["VERB","NOUN"]}
+{"token":"annual","token_id":3296,"count":13,"synonym":"a yearly","POS":["ADJ","PROPN"]}
+{"token":"seam","token_id":25180,"count":1,"synonym":"stitching","POS":["NOUN"]}
+{"token":"sale","token_id":5096,"count":1,"synonym":"discount","POS":["NOUN"]}
+{"token":"canvas","token_id":10683,"count":5,"synonym":"fabric","POS":["NOUN"]}
+{"token":"bad","token_id":2919,"count":13,"synonym":"detrimental","POS":["ADJ","PROPN"]}
+{"token":"bare","token_id":6436,"count":1,"synonym":"empty","POS":["ADJ"]}
+{"token":"device","token_id":5080,"count":4,"synonym":"gadget","POS":["NOUN"]}
+{"token":"seat","token_id":2835,"count":12,"synonym":"accommodate","POS":["NOUN"]}
+{"token":"vein","token_id":12818,"count":1,"synonym":"blood vessel","POS":["NOUN"]}
+{"token":"wet","token_id":4954,"count":4,"synonym":"damp","POS":["ADJ"]}
+{"token":"compose","token_id":17202,"count":1,"synonym":"formed with","POS":["VERB"]}
+{"token":"presents","token_id":7534,"count":7,"synonym":"gifts","POS":["VERB"]}
+{"token":"correspondence","token_id":11061,"count":2,"synonym":"exchange","POS":["NOUN"]}
+{"token":"imminent","token_id":17566,"count":2,"synonym":"impending","POS":["ADJ"]}
+{"token":"cooperation","token_id":6792,"count":2,"synonym":"collaboration","POS":["NOUN","PROPN"]}
+{"token":"corporation","token_id":3840,"count":6,"synonym":"company","POS":["NOUN","PROPN"]}
+{"token":"sole","token_id":7082,"count":6,"synonym":"only","POS":["ADJ"]}
+{"token":"forth","token_id":5743,"count":2,"synonym":"forward","POS":["ADP","PROPN"]}
+{"token":"lightning","token_id":7407,"count":2,"synonym":"nan","POS":["NOUN"]}
+{"token":"peace","token_id":3521,"count":20,"synonym":"tranquility","POS":["NOUN","PROPN"]}
+{"token":"ensure","token_id":5676,"count":8,"synonym":"make sure","POS":["VERB"]}
+{"token":"ensure","token_id":5676,"count":8,"synonym":"confirm","POS":["VERB"]}
+{"token":"immortal","token_id":12147,"count":1,"synonym":"eternal","POS":["ADJ"]}
+{"token":"martial","token_id":7761,"count":7,"synonym":"Fighting","POS":["ADJ","PROPN"]}
+{"token":"dairy","token_id":11825,"count":2,"synonym":"nan","POS":["NOUN"]}
+{"token":"flair","token_id":22012,"count":2,"synonym":"talent","POS":["NOUN","PROPN"]}
+{"token":"accept","token_id":5138,"count":7,"synonym":"receive","POS":["VERB"]}
+{"token":"lose","token_id":4558,"count":4,"synonym":"misplace","POS":["VERB"]}
+{"token":"wear","token_id":4929,"count":4,"synonym":"put on","POS":["VERB","NOUN"]}
+{"token":"wear","token_id":4929,"count":4,"synonym":"put on","POS":["VERB","NOUN"]}
+{"token":"hail","token_id":16889,"count":2,"synonym":"nan","POS":["NOUN","PROPN"]}
+{"token":"borne","token_id":15356,"count":4,"synonym":"supported","POS":["VERB"]}
+{"token":"costume","token_id":9427,"count":5,"synonym":"attire","POS":["NOUN"]}
+{"token":"everyone","token_id":3071,"count":4,"synonym":"All","POS":["PRON"]}
+{"token":"diary","token_id":9708,"count":8,"synonym":"writes journal","POS":["NOUN"]}
+{"token":"statue","token_id":6231,"count":5,"synonym":"sculpture","POS":["NOUN"]}
+{"token":"statue","token_id":6231,"count":5,"synonym":"sculpture","POS":["NOUN"]}
+{"token":"coarse","token_id":20392,"count":1,"synonym":"rough","POS":["ADV"]}
+{"token":"waste","token_id":5949,"count":9,"synonym":"squander","POS":["VERB","NOUN"]}
+{"token":"foul","token_id":12487,"count":5,"synonym":"repugnant","POS":["VERB","ADJ"]}
+{"token":"throws","token_id":11618,"count":2,"synonym":"passes","POS":["VERB","NOUN"]}
+{"token":"continual","token_id":27222,"count":1,"synonym":"constant","POS":["ADJ"]}
+{"token":"vain","token_id":15784,"count":2,"synonym":"fruitless","POS":["NOUN","ADJ"]}
+{"token":"rite","token_id":14034,"count":1,"synonym":"ceremonies","POS":["NOUN"]}
+{"token":"premise","token_id":18458,"count":1,"synonym":"concept","POS":["NOUN"]}
+{"token":"fare","token_id":13258,"count":2,"synonym":"prices","POS":["NOUN"]}
+{"token":"prospective","token_id":17464,"count":1,"synonym":"potential","POS":["ADJ"]}
+{"token":"counsel","token_id":9517,"count":1,"synonym":"advice","POS":["NOUN"]}
+{"token":"manor","token_id":6952,"count":1,"synonym":"mansion","POS":["NOUN"]}
+{"token":"beside","token_id":3875,"count":3,"synonym":"next to","POS":["ADP"]}
+{"token":"potent","token_id":16834,"count":1,"synonym":"powerful","POS":["ADJ"]}
+{"token":"historic","token_id":3181,"count":6,"synonym":"momentous","POS":["ADJ","PROPN"]}
+{"token":"consul","token_id":11801,"count":10,"synonym":"diplomat","POS":["NOUN","PROPN"]}
+{"token":"fair","token_id":4189,"count":1,"synonym":"nan","POS":["ADJ"]}
+{"token":"adept","token_id":26398,"count":1,"synonym":"skilled","POS":["ADJ"]}
+{"token":"adept","token_id":26398,"count":1,"synonym":"skilled","POS":["ADJ"]}
+{"token":"sometime","token_id":8811,"count":1,"synonym":"some day","POS":["ADV"]}
+{"token":"sometime","token_id":8811,"count":1,"synonym":"nan","POS":["ADV"]}
+{"token":"verses","token_id":11086,"count":2,"synonym":"stanzas","POS":["NOUN","PROPN"]}
+{"token":"founded","token_id":2631,"count":9,"synonym":"established","POS":["VERB"]}
+{"token":"bazaar","token_id":22774,"count":1,"synonym":"market","POS":["NOUN"]}
+{"token":"tenant","token_id":16713,"count":1,"synonym":"occupant","POS":["NOUN"]}
+{"token":"creek","token_id":3636,"count":8,"synonym":"stream","POS":["NOUN","PROPN"]}
+{"token":"concurrent","token_id":16483,"count":1,"synonym":"simultaneous","POS":["ADJ"]}
+{"token":"stationary","token_id":17337,"count":1,"synonym":"immobile","POS":["ADJ"]}
+{"token":"eminent","token_id":14953,"count":1,"synonym":"distinguished","POS":["ADJ"]}
+{"token":"principle","token_id":6958,"count":1,"synonym":"values","POS":["NOUN"]}
+{"token":"comprise","token_id":15821,"count":1,"synonym":"includes","POS":["VERB"]}
+{"token":"hanged","token_id":17818,"count":1,"synonym":"executed","POS":["VERB"]}
+{"token":"advise","token_id":18012,"count":1,"synonym":"recommend","POS":["VERB"]}
+{"token":"founder","token_id":3910,"count":1,"synonym":"sink","POS":["NOUN"]}
+{"token":"custom","token_id":7661,"count":1,"synonym":"practice","POS":["NOUN"]}
+{"token":"compliment","token_id":19394,"count":1,"synonym":"praise","POS":["VERB"]}
+{"token":"credible","token_id":23411,"count":1,"synonym":"trustworthy","POS":["ADJ"]}
