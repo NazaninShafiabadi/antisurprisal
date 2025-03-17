@@ -2,7 +2,6 @@
 
 results/
 
-draft.ipynb
-analysis.ipynb
+*.ipynb
 
 tokenizer_cache/

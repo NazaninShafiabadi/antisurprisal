@@ -7,16 +7,38 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import h5py
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib import gridspec
 
 from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
 
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+
+
+def load_attn_hs_hdf5(save_attn_hs):
+    data = {}
+    with h5py.File(save_attn_hs, 'r') as f:
+        for step_group in f.values():
+            for token_group in step_group.values():
+                token_id = token_group['TokenID'][()]
+                token = token_group['Token'][()]
+                attentions = token_group['Attentions'][:]
+                hidden_states = token_group['HiddenStates'][:]
+                # neg_attentions = token_group['NegativeAttentions'][:]
+                # neg_hidden_states = token_group['NegativeHiddenStates'][:]
+                
+                data[(step_group.name, token_id)] = {
+                    'Token': token,
+                    'Attentions': attentions,
+                    'HiddenStates': hidden_states,
+                    # 'NegativeAttentions': neg_attentions,
+                    # 'NegativeHiddenStates': neg_hidden_states
+                }
+    return data
 
 ####################################################################################################
 
@@ -244,8 +266,8 @@ def plot_surprisals(
 
 ####################################################################################################
 
-def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False, 
-                    plot_differences: bool = False, save_as: str = None):
+def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_learning_curves: bool = False, 
+            plot_differences: bool = False, save_as: str = None):
     """
     Plots surprisal and antisurprisal curves for given words, with options for correlation 
     computation and pairwise difference visualization.
@@ -263,25 +285,26 @@ def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False,
         - 'MeanAntisurprisal': antisurprisal values.
     
     compute_corr : bool, optional
-        If True, computes and displays the mean Pearson correlation between surprisal and 
+        If True, computes, displays and returns the mean Pearson correlation between surprisal and 
         antisurprisal curves. Default is False.
+
+    plot_learning_curves : bool, optional
+        If True, plots the surprisal and antisurprisal curves. Default is False.
     
     plot_differences : bool, optional
-        If True, plots pairwise differences between surprisal and antisurprisal curves in 
-        a second subplot. Default is False.
+        If True, plots pairwise differences between surprisal and antisurprisal curves. Default is False.
     
     save_as : str, optional
         If provided, saves the figure as a PDF with the specified filename. Default is None.
     """
     plt.style.use('ggplot')
     
-    if plot_differences:
-        fig = plt.figure(figsize=(10.5, 3.5))
-        gs = gridspec.GridSpec(1, 2)
-        ax1 = fig.add_subplot(gs[0])
-        ax2 = fig.add_subplot(gs[1])
-    else:
+    if plot_learning_curves and plot_differences:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.5, 3.5))
+    elif plot_learning_curves:
         fig, ax1 = plt.subplots(figsize=(5.3, 3.5))
+    elif plot_differences:
+        fig, ax2 = plt.subplots(figsize=(5.3, 3.5))
     
     num_words = len(words)
     surprisal_colors = cm.Greens(np.linspace(0.8, 1, num_words))  # Shades of green
@@ -301,21 +324,23 @@ def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False,
             print(f'No data found for the word "{word}"')
             continue
 
-        # Store data for correlation
         if compute_corr:
+            # Store data for correlation computation
             surprisal_curves.append(word_data['MeanSurprisal'].values)
             antisurprisal_curves.append(word_data['MeanAntisurprisal'].values)
 
-        # Plot surprisal and antisurprisal curves on the first subplot (ax1)
-        ax1.plot(word_data['Steps'], word_data['MeanSurprisal'], 
-                 marker=marker, alpha=0.7, color=surprisal_colors[i], label=f'{word} (S)')
-        ax1.plot(word_data['Steps'], word_data['MeanAntisurprisal'], 
-                 marker=marker, alpha=0.7, color=antisurprisal_colors[i], label=f'{word} (AS)')
+        if plot_learning_curves:
+            # Plot surprisal and antisurprisal curves
+            ax1.plot(word_data['Steps'], word_data['MeanSurprisal'], 
+                     marker=marker, alpha=0.7, color=surprisal_colors[i], label=f'{word} (S)')
+            ax1.plot(word_data['Steps'], word_data['MeanAntisurprisal'], 
+                     marker=marker, alpha=0.7, color=antisurprisal_colors[i], label=f'{word} (AS)')
+            legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+            legend_bg_color = legend.get_frame().get_facecolor()
+            legend_edge_color = legend.get_frame().get_edgecolor()
+            ax1.set_xlabel('Steps')
+            ax1.set_ylabel('Mean Surprisal/Antisurprisal')
 
-    legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
-    legend_bg_color = legend.get_frame().get_facecolor()
-    legend_edge_color = legend.get_frame().get_edgecolor()
-    
     # Compute correlation and/or difference curves (if enabled)
     if (plot_differences or compute_corr) and len(surprisal_curves) > 1:
         surprisal_matrix = np.array(surprisal_curves)
@@ -330,13 +355,17 @@ def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False,
             for j in range(i + 1, len(surprisal_curves)):
                 
                 if plot_differences:
-                    # Pairwise differences between surprisal & antisurprisal curves
+                    # Plot pairwise differences between surprisal & antisurprisal curves
                     surprisal_diff = np.abs(surprisal_matrix[i] - surprisal_matrix[j])
                     antisurprisal_diff = np.abs(antisurprisal_matrix[i] - antisurprisal_matrix[j])
-                    # Plot surprisal differences on ax2
                     ax2.plot(steps, surprisal_diff, linestyle="-", color="green", alpha=0.6, label=f'Surprisal diff')
-                    # Plot antisurprisal differences on ax2
                     ax2.plot(steps, antisurprisal_diff, linestyle="-", color="red", alpha=0.6, label=f'Antisurprisal diff')
+                    legend_text = f"Words:\n{words[i]}, {words[j]}"
+                    handles, labels = ax2.get_legend_handles_labels()
+                    handles.insert(0, plt.Line2D([0], [0], color='none', label=legend_text))
+                    ax2.set_xlabel('Steps')
+                    ax2.set_ylabel('Differences')
+                    ax2.legend(handles=handles, fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left') 
 
                 if compute_corr:
                     # Correlation between surprisal curves and antisurprisal curves
@@ -346,18 +375,10 @@ def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False,
         if compute_corr:
             mean_surprisal_corr = np.mean(surprisal_corrs)
             mean_antisurprisal_corr = np.mean(antisurprisal_corrs)
-            ax1.text(1.09, 0.5, f"Corr (S) = {mean_surprisal_corr:.2f}\nCorr (AS) = {mean_antisurprisal_corr:.2f}", 
-                     transform=ax1.transAxes, fontsize=9, 
-                     bbox=dict(facecolor=legend_bg_color, edgecolor=legend_edge_color, boxstyle='round,pad=0.5'))
-
-    # Setting axes limits and labels
-    ax1.set_xlabel('Steps')
-    ax1.set_ylabel('Mean surprisal')
-
-    if plot_differences:
-        ax2.set_xlabel('Steps')
-        ax2.set_ylabel('Differences')
-        ax2.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left')   
+            if plot_learning_curves:
+                ax1.text(1.09, 0.5, f"Corr (S) = {mean_surprisal_corr:.2f}\nCorr (AS) = {mean_antisurprisal_corr:.2f}", 
+                         transform=ax1.transAxes, fontsize=9, 
+                         bbox=dict(facecolor=legend_bg_color, edgecolor=legend_edge_color, boxstyle='round,pad=0.5'))
 
     plt.tight_layout()
 
@@ -365,7 +386,11 @@ def plot_all_in_one(words: List[str], surprisals_df, compute_corr: bool = False,
         plt.savefig(save_as, format='pdf', bbox_inches='tight')
         print(f"Figure saved to {save_as}") 
 
-    plt.show()
+    if plot_learning_curves or plot_differences:
+        plt.show()
+
+    if compute_corr:
+        return mean_surprisal_corr, mean_antisurprisal_corr
 
 ####################################################################################################
 
