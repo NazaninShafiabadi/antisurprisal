@@ -17,22 +17,38 @@ python3 src/modules/attn_hs.py \
 --save_samples="data/processed/wordbank_attn_hs_contexts.pickle" \
 --save_indiv_surprisals="results/attn_hs/indiv_surp_antisurp.txt" \
 --save_attn_hs="results/attn_hs/attn_hs.jsonl"
+
+python3 src/modules/attn_hs.py \
+--tokenizer="google/multiberts-seed_0" \
+--wordbank_file="data/processed/wordbank_attn_hs.jsonl" \
+--examples_file="data/processed/sent_pairs.txt" \
+--max_samples=512 \
+--batch_size=32 \
+--output_file="results/attn_hs/surp_antisurp.txt" \
+--model="google/multiberts-seed_0" --model_type="bert" \
+--save_samples="results/attn_hs/contexts.pickle" \
+--attn_hs_dir="results/attn_hs"
 """
-import os
-import sys
-import string
-import json 
+# Standard library imports
 import argparse
 import codecs
-import random
+import gzip
+import os
 import pickle
+import random
+import string
+import sys
 
+# Third-party imports
+import h5py
+import zarr
+import numpy as np
 import pandas as pd
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from transformers import (
-    AutoModelForMaskedLM,
     AutoConfig,
+    AutoModelForMaskedLM,
     AutoTokenizer
 )
 
@@ -62,24 +78,73 @@ def create_parser():
     # Load token data (sample sentences for each token) from file.
     # If file does not exist, saves the token data to this file.
     parser.add_argument('--save_samples', default="")
-    parser.add_argument('--save_indiv_surprisals', default="")
+    parser.add_argument('--save_indiv_surprisals', default="", help="Save individual surprisals and antisurprisals to a file.")
     # Save attention and hidden states for each token. 
-    # File path should lead to an empty file, otherwise it will be overwritten.
-    parser.add_argument('--save_attn_hs', default="")
+    parser.add_argument('--attn_hs_dir', default="", help="Directory to save attention and hidden states.")
     return parser
 
 
 def read_data_to_df(file_path):
     if file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+    elif file_path.endswith('.tsv'):
         df = pd.read_csv(file_path, sep='\t')
     elif file_path.endswith('.json'):
         df = pd.read_json(file_path)
     elif file_path.endswith('.jsonl'):
         df = pd.read_json(file_path, lines=True)
     else:
-        print(f"Unsupported file format: {file_path}")
-        return
+        raise ValueError(f"Unsupported file format: {file_path}")
     return df
+
+
+def save_attn_hs_hdf5(hdf5_file, step, token, attentions, hidden_states):
+    """
+    Save token-specific attentions and hidden states to an HDF5 file.
+
+    Parameters:
+        filepath (str): Path to the HDF5 file.
+        step (int): Current step number.
+        token (str): Token being processed.
+        attentions (np.ndarray): Attention tensor (num_heads, seq_len).
+        hidden_states (np.ndarray): Hidden states tensor (seq_len, hidden_size).
+
+    Example structure:
+        file.h5
+        ├── token1
+        │   ├── step_0001
+        │   │     ├── attentions
+        │   │     └── hidden_states
+        │   └── step_0002
+        │         ├── attentions
+        │         └── hidden_states
+        ├── token2
+        │   └── step_0001
+        │         ├── attentions
+        │         └── hidden_states
+        └── ...
+    """
+    # Create a group for the token if it doesn't exist
+    token_group = hdf5_file.require_group(f"{token}")
+
+    # Create a subgroup for the current step
+    step_group = token_group.require_group(f"step_{step}")
+
+    # Store attentions and hidden states of each batch as separate datasets (variable-length approach)
+    step_group.create_dataset(
+        "attentions",
+        data=attentions,
+        dtype=np.float32,
+        compression="gzip"
+    )
+    step_group.create_dataset(
+        "hidden_states",
+        data=hidden_states,
+        dtype=np.float32,
+        compression="gzip"
+    )
+
+    print(f"Saved data for token '{token}' at step {step} to {hdf5_file}")
 
 
 def get_sample_sentences(tokenizer, wordbank_file, examples_file,
@@ -175,7 +240,7 @@ The tokenizer should be loaded as in the main() function.
 The model_type is bert.
 The model can be loaded using the load_single_model() function.
 """
-def run_model(model, examples, batch_size, tokenizer, save_attn_hs):
+def run_model(model, examples, batch_size, tokenizer, return_attn_hs=False):
     # Create batches.
     batches = []
     i = 0
@@ -191,7 +256,7 @@ def run_model(model, examples, batch_size, tokenizer, save_attn_hs):
     model.eval()
     with torch.no_grad():
         eval_logits = []
-        eval_attention = []
+        eval_attentions = []
         eval_hidden_states = []
         for batch_i in range(len(batches)):
             inputs = prepare_tokenized_examples(batches[batch_i], tokenizer)
@@ -199,8 +264,8 @@ def run_model(model, examples, batch_size, tokenizer, save_attn_hs):
             outputs = model(input_ids=inputs["input_ids"],
                             attention_mask=inputs["attention_mask"],
                             labels=inputs["labels"],
-                            output_attentions=save_attn_hs != "",
-                            output_hidden_states=save_attn_hs != "",
+                            output_attentions=return_attn_hs,
+                            output_hidden_states=return_attn_hs,
                             return_dict=True)
             
             logits = outputs['logits'].detach()
@@ -212,38 +277,41 @@ def run_model(model, examples, batch_size, tokenizer, save_attn_hs):
             mask_logits = logits[target_indices, :]
             eval_logits.append(mask_logits.detach().cpu()) # Send to CPU so not all need to be held on GPU.
 
-            if save_attn_hs:
+            if return_attn_hs:
                 # Convert the boolean mask to indices
-                target_indices = torch.nonzero(target_indices, as_tuple=True)[1]
+                target_indices = torch.nonzero(target_indices, as_tuple=True)[1]    # Shape: [batch_size]
                 
                 # Extract attentions at the target positions from the last layer
                 # Each layer's attention is a tensor of shape [batch_size, num_heads, seq_len, seq_len]
-                target_attentions = outputs['attentions'][-1][:, :, target_indices, :].half().detach().cpu().tolist() # Conversion to list to make it JSON serializable  
-                eval_attention.append(target_attentions)
+                target_attentions = (outputs['attentions'][-1][:, :, target_indices, :]
+                                     .detach()  # Detach from the computation graph
+                                     .cpu()     # Move to CPU to save GPU memory
+                                    #  .numpy()   # Convert to numpy array to save memory
+                                    )           # Shape: [batch_size, num_heads, batch_size, seq_len]
+                eval_attentions.append(target_attentions)
             
                 # Extract hidden states at the target positions from the last layer
                 # Each layer's hidden states is a tensor of shape [batch_size, seq_len, hidden_size]
-                target_hidden_states = outputs['hidden_states'][-1][:, target_indices, :].half().detach().cpu().tolist()
+                target_hidden_states = outputs['hidden_states'][-1][:, target_indices, :].detach().cpu()    # Shape: [batch_size, batch_size, hidden_size]
                 eval_hidden_states.append(target_hidden_states)
 
             # Free memory after each batch
             del outputs
             torch.cuda.empty_cache()
 
-    # Logits output shape: num_examples x vocab_size.
-    all_eval_logits = torch.cat(eval_logits, dim=0)
+    all_eval_logits = torch.cat(eval_logits, dim=0) # Shape: [num_examples, vocab_size]
     if all_eval_logits.shape[0] != len(examples):
         # This can happen if there is not exactly one mask per example.
         print("WARNING: length of logits {0} does not equal number of examples {1}!!".format(
             all_eval_logits.shape[0], len(examples)
         ))
     
-    return all_eval_logits, eval_attention, eval_hidden_states
+    return all_eval_logits, eval_attentions, eval_hidden_states
 
 
 # Run token evaluations for a single model.
-def evaluate_tokens(model, token_data, tokenizer, outfile,
-                    curr_step, batch_size, min_samples, save_attn_hs):
+def evaluate_tokens(model, token_data, tokenizer, outfile, indiv_surprisals_file,
+                    curr_step, batch_size, min_samples, attn_hs_dir):
     token_count = 0
     for token, token_id, positive_samples, negative_samples in token_data:
         print("\nEvaluation token: {}".format(token))
@@ -256,9 +324,14 @@ def evaluate_tokens(model, token_data, tokenizer, outfile,
             print("Not enough examples; skipped.")
             continue
         
+        # Sort the positive and negative samples by length to minimize padding, while keeping the pairs together.
+        paired_samples = list(zip(positive_samples, negative_samples))
+        paired_samples = sorted(paired_samples, key=lambda x: len(x[0]))    # sort by length of positive samples
+        positive_samples, negative_samples = map(list, zip(*paired_samples))
+
         # Get logits with shape: num_examples x vocab_size.
-        logits, attentions, hidden_states = run_model(
-            model, positive_samples, batch_size, tokenizer, save_attn_hs)
+        return_attn_hs = True if attn_hs_dir else False
+        logits, attentions, hidden_states = run_model(model, positive_samples, batch_size, tokenizer, return_attn_hs)
         probs = torch.nn.Softmax(dim=-1)(logits)
         # Get median rank of correct token.
         rankings = torch.argsort(probs, axis=-1, descending=True)
@@ -276,8 +349,7 @@ def evaluate_tokens(model, token_data, tokenizer, outfile,
         std_surprisal = torch.std(surprisals).item()
         
         # Surprisals for negative samples (Antisurprisals)
-        neg_logits, neg_attentions, neg_hidden_states = run_model(
-            model, negative_samples, batch_size, tokenizer, save_attn_hs)
+        neg_logits, neg_attentions, neg_hidden_states = run_model(model, negative_samples, batch_size, tokenizer)
         neg_probs = torch.nn.Softmax(dim=-1)(neg_logits)
         neg_token_probs = neg_probs[:, token_id]
         neg_token_probs += 0.000000001 # Smooth with (1e-9).
@@ -296,36 +368,24 @@ def evaluate_tokens(model, token_data, tokenizer, outfile,
             mean_neg_surprisal, std_neg_surprisal, accuracy, num_examples))
         
         # Save individual surprisals and antisurprisals if requested
-        if args.save_indiv_surprisals != "":
-            surprisals_list = surprisals.tolist()
-            neg_surprisals_list = neg_surprisals.tolist()
-            if len(surprisals_list) != len(neg_surprisals_list):
-                max_len = max(len(surprisals_list), len(neg_surprisals_list))
-                surprisals_list.extend([None] * (max_len - len(surprisals_list)))
-                neg_surprisals_list.extend([None] * (max_len - len(neg_surprisals_list)))
-            indiv_surps_df = pd.DataFrame(
-                {'Step': [curr_step] * len(surprisals_list),
-                 'Token': [token] * len(surprisals_list),
-                 'TokenID': [token_id] * len(surprisals_list),
-                 'Surprisal': surprisals_list,
-                 'Antisurprisal': neg_surprisals_list,
-                 'NumExamples': [num_examples] * len(surprisals_list)
-                 })
-            # Append created DataFrame to the file
-            indiv_surps_df.to_csv(args.save_indiv_surprisals, mode='a', header=False, index=False, sep='\t')
+        if indiv_surprisals_file:
+            ...
+            # pickle.dump({
+            #     'Step': curr_step,
+            #     'Token': token,
+            #     'TokenID': token_id,
+            #     'Surprisals': surprisals.tolist(),
+            #     'Antisurprisals': neg_surprisals.tolist(),
+            #     'NumExamples': num_examples
+            # }, indiv_surprisals_file, protocol=pickle.HIGHEST_PROTOCOL)
         
         # Save attention and hidden states if requested
-        if save_attn_hs:
-            with open(save_attn_hs, 'a') as f:
-                f.write(json.dumps({
-                    'Step': curr_step,
-                    'Token': token,
-                    'TokenID': token_id,
-                    'Attentions': attentions,
-                    'HiddenStates': hidden_states,
-                    'NegativeAttentions': neg_attentions,
-                    'NegativeHiddenStates': neg_hidden_states
-                }) + '\n')
+        if attn_hs_dir:
+            torch.save({'Step': curr_step, 
+                        'Token': token, 
+                        'Attentions': attentions, 
+                        'HiddenStates': hidden_states
+                        }, os.path.join(attn_hs_dir, f"token_{token}_step_{curr_step}.bin"))
     return
 
 
@@ -369,29 +429,39 @@ def main(args):
         if args.save_samples != "":
             pickle.dump(token_data, open(args.save_samples, "wb"))
 
-    if args.save_attn_hs != "" and os.path.isfile(args.save_attn_hs):
-        # If the file already exists, delete it.
-        os.remove(args.save_attn_hs)
-
     # Prepare for evaluation.
     outfile = codecs.open(args.output_file, 'w', encoding='utf-8')
     # File header.
-    outfile.write("Steps\tToken\tMedianRank\tMeanSurprisal\tStdevSurprisal\tMeanAntisurprisal\tStdevAntisurprisal\tAccuracy\tNumExamples\n")
+    outfile.write("Step\tToken\tMedianRank\tMeanSurprisal\tStdSurprisal\tMeanAntisurprisal\tStdAntisurprisal\tAccuracy\tNumExamples\n")
 
     if args.save_indiv_surprisals != "":
-        indiv_surps = pd.DataFrame(columns=['Steps', 'Token', 'Context', 'Surprisal', 'NegSurprisal'])
-        indiv_surps.to_csv(args.save_indiv_surprisals, index=False, sep='\t')
+        # Ensure the file extension is correct
+        indiv_surprisals_file = args.save_indiv_surprisals.split('.')[0] + '.pkl.gz' if not args.save_indiv_surprisals.endswith('.pkl.gz') else args.save_indiv_surprisals
+        # If the file already exists, delete it.
+        if os.path.isfile(indiv_surprisals_file):
+            os.remove(indiv_surprisals_file)
+        # Open the file in append mode
+        indiv_surprisals_file = gzip.open(indiv_surprisals_file, 'ab')
+    else:
+        indiv_surprisals_file = None
+
+    # Check that the attn_hs_dir exists
+    if args.attn_hs_dir and not os.path.exists(args.attn_hs_dir):
+        os.makedirs(args.attn_hs_dir)
     
     # Get checkpoints & Run evaluation.
-    steps = list(range(0, 200_000, 20_000)) + list(range(200_000, 2_100_000, 100_000))
+    # steps = list(range(0, 200_000, 20_000)) + list(range(200_000, 2_100_000, 100_000))
+    steps = [0]
     for step in steps:
         checkpoint = args.model + f"-step_{step//1000}k"
         model = load_single_model(checkpoint, config, tokenizer, args.model_type)
-        evaluate_tokens(model, token_data, tokenizer, outfile,
-                        step, args.batch_size, args.min_samples, 
-                        args.save_attn_hs)
-
+        evaluate_tokens(model, token_data, tokenizer, outfile, indiv_surprisals_file,
+                        step, args.batch_size, args.min_samples, args.attn_hs_dir)
+    
     outfile.close()
+    if indiv_surprisals_file:
+        indiv_surprisals_file.close()
+    return
 
 
 if __name__ == "__main__":

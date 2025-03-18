@@ -3,6 +3,7 @@
 import math
 from itertools import cycle
 from typing import List, Dict
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -19,26 +20,35 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
 
-def load_attn_hs_hdf5(save_attn_hs):
-    data = {}
-    with h5py.File(save_attn_hs, 'r') as f:
-        for step_group in f.values():
-            for token_group in step_group.values():
-                token_id = token_group['TokenID'][()]
-                token = token_group['Token'][()]
-                attentions = token_group['Attentions'][:]
-                hidden_states = token_group['HiddenStates'][:]
-                # neg_attentions = token_group['NegativeAttentions'][:]
-                # neg_hidden_states = token_group['NegativeHiddenStates'][:]
-                
-                data[(step_group.name, token_id)] = {
-                    'Token': token,
-                    'Attentions': attentions,
-                    'HiddenStates': hidden_states,
-                    # 'NegativeAttentions': neg_attentions,
-                    # 'NegativeHiddenStates': neg_hidden_states
-                }
-    return data
+def load_token_data(filepath, token):
+    """
+    Load all step data for a given token from the HDF5 file.
+    
+    Parameters:
+        filepath (str): Path to the HDF5 file.
+        token (str): Token to load data for.
+    
+    Returns:
+        dict: Dictionary containing step data.
+    """
+    token_data = {}
+
+    with h5py.File(filepath, 'r') as f:
+        token_group = f.get(f"{token}")
+        if token_group is None:
+            print(f"No data found for token '{token}'")
+            return token_data
+
+        attentions = defaultdict(list)
+        hidden_states = defaultdict(list)
+        
+        for step in token_group:
+            step_group = token_group[step]
+            attentions[step].append(np.array(step_group["attentions"][:]))
+            hidden_states[step].append(np.array(step_group["hidden_states"][:]))
+
+    return attentions, hidden_states
+
 
 ####################################################################################################
 
@@ -143,18 +153,14 @@ def plot_surprisals(
 
         metrics = {}
         
-        x = word_data['Steps'].values
+        x = word_data['Step'].values
         y_pos = word_data['MeanSurprisal'].values
         
         # Plot positive surprisals
         if show_error_interval:
-            try:
-                sns.lineplot(data=word_data, x='Steps', y='Surprisal', marker='o', color='darkseagreen', 
-                             errorbar=('ci', 100), label='Positive Samples' if i == num_words - 1 else None, 
-                             ax=ax, legend=(i == num_words - 1))
-            except Exception as e:
-                print(e)
-                ax.plot(x, y_pos, marker='o', color='darkseagreen', label='Positive Samples')
+            pos_err = word_data['StdSurprisal'].values
+            ax.plot(x, y_pos, marker='o', color='darkseagreen', label='Positive Samples' if i == num_words - 1 else None)
+            ax.fill_between(x, y_pos - pos_err, y_pos + pos_err, alpha=0.2, color='darkseagreen')
         else:
             ax.plot(x, y_pos, marker='o', color='darkseagreen', label='Positive Samples')
 
@@ -188,15 +194,11 @@ def plot_surprisals(
             
             # Plot negative surprisals
             if show_error_interval:
-                try:
-                    sns.lineplot(data=word_data, x='Steps', y='Antiurprisal', marker='o', color='indianred', 
-                                 errorbar=('ci', 100), label='Negative Samples'if i == num_words - 1 else None, 
-                                 ax=ax, legend=(i == num_words - 1))   
-                except Exception as e:
-                    print(e)         
-                    ax.plot(word_data['Steps'], word_data['MeanAntisurprisal'], marker='o', color='indianred', label='Negative Samples')
+                neg_err = word_data['StdAntisurprisal'].values
+                ax.plot(x, y_neg, marker='o', color='indianred', label='Negative Samples' if i == num_words - 1 else None)
+                ax.fill_between(x, y_neg - neg_err, y_neg + neg_err, alpha=0.2, color='indianred')   
             else:
-                ax.plot(word_data['Steps'], word_data['MeanAntisurprisal'], marker='o', color='indianred', label='Negative Samples')
+                ax.plot(x, y_neg, marker='o', color='indianred', label='Negative Samples')
             
             if convergence:
                 highest_antisurprisal = max(y_neg)
@@ -225,7 +227,7 @@ def plot_surprisals(
 
             # Calculate correlation
             if not first_step:
-                word_data = word_data[word_data['Steps'] != 0]                
+                word_data = word_data[word_data['Step'] != 0]                
             corr, _ = pearsonr(word_data['MeanSurprisal'], word_data['MeanAntisurprisal'])
             correlations[word] = corr
             ax.set_title(f'"{word}"', pad=18)
@@ -234,8 +236,8 @@ def plot_surprisals(
         else:
             ax.set_title(f'"{word}"')
         
-        ax.set_xlabel('Steps')
-        ax.set_ylabel('Mean surprisal')
+        ax.set_xlabel('Step')
+        ax.set_ylabel('Avg. surprisal')
 
         all_metrics[word] = metrics
     
@@ -267,7 +269,7 @@ def plot_surprisals(
 ####################################################################################################
 
 def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_learning_curves: bool = False, 
-            plot_differences: bool = False, save_as: str = None):
+            show_error_interval: bool = False, plot_differences: bool = False, save_as: str = None):
     """
     Plots surprisal and antisurprisal curves for given words, with options for correlation 
     computation and pairwise difference visualization.
@@ -280,7 +282,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
     surprisals_df : DataFrame
         A pandas DataFrame containing columns:
         - 'Token': the word,
-        - 'Steps': the x-axis values,
+        - 'Step': the x-axis values,
         - 'MeanSurprisal': surprisal values,
         - 'MeanAntisurprisal': antisurprisal values.
     
@@ -290,6 +292,9 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
 
     plot_learning_curves : bool, optional
         If True, plots the surprisal and antisurprisal curves. Default is False.
+
+    show_error_interval : bool, optional
+        If True, shows the error interval around the mean surprisal and antisurprisal values. Default is False.
     
     plot_differences : bool, optional
         If True, plots pairwise differences between surprisal and antisurprisal curves. Default is False.
@@ -330,23 +335,30 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
             antisurprisal_curves.append(word_data['MeanAntisurprisal'].values)
 
         if plot_learning_curves:
+            x = word_data['Step']
+            y_pos = word_data['MeanSurprisal']
+            y_neg = word_data['MeanAntisurprisal']
+            pos_err = word_data['StdSurprisal']
+            neg_err = word_data['StdAntisurprisal']
+
             # Plot surprisal and antisurprisal curves
-            ax1.plot(word_data['Steps'], word_data['MeanSurprisal'], 
-                     marker=marker, alpha=0.7, color=surprisal_colors[i], label=f'{word} (S)')
-            ax1.plot(word_data['Steps'], word_data['MeanAntisurprisal'], 
-                     marker=marker, alpha=0.7, color=antisurprisal_colors[i], label=f'{word} (AS)')
+            ax1.plot(x, y_pos, marker=marker, alpha=0.7, color=surprisal_colors[i], label=f'{word} (S)')
+            ax1.plot(x, y_neg, marker=marker, alpha=0.7, color=antisurprisal_colors[i], label=f'{word} (AS)')
+            if show_error_interval:
+                ax1.fill_between(x, y_pos - pos_err, y_pos + pos_err, color=surprisal_colors[i], alpha=0.2)
+                ax1.fill_between(x, y_neg - neg_err, y_neg + neg_err, color=antisurprisal_colors[i], alpha=0.2)
             legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
             legend_bg_color = legend.get_frame().get_facecolor()
             legend_edge_color = legend.get_frame().get_edgecolor()
-            ax1.set_xlabel('Steps')
-            ax1.set_ylabel('Mean Surprisal/Antisurprisal')
+            ax1.set_xlabel('Step')
+            ax1.set_ylabel('Avg. Surprisal / Antisurprisal')
 
     # Compute correlation and/or difference curves (if enabled)
     if (plot_differences or compute_corr) and len(surprisal_curves) > 1:
         surprisal_matrix = np.array(surprisal_curves)
         antisurprisal_matrix = np.array(antisurprisal_curves)
 
-        steps = surprisals_df['Steps'].unique()
+        steps = surprisals_df['Step'].unique()
 
         surprisal_corrs = []
         antisurprisal_corrs = []
@@ -363,7 +375,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
                     legend_text = f"Words:\n{words[i]}, {words[j]}"
                     handles, labels = ax2.get_legend_handles_labels()
                     handles.insert(0, plt.Line2D([0], [0], color='none', label=legend_text))
-                    ax2.set_xlabel('Steps')
+                    ax2.set_xlabel('Step')
                     ax2.set_ylabel('Differences')
                     ax2.legend(handles=handles, fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left') 
 

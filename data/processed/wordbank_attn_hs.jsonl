@@ -13,9 +13,11 @@
 {"token":"discovered","token_id":3603,"count":39,"POS":["VERB"]}
 {"token":"aid","token_id":4681,"count":27,"POS":["VERB","NOUN"]}
 {"token":"location","token_id":3295,"count":23,"POS":["NOUN"]}
+{"token":"ceremonies","token_id":10912,"count":5,"POS":["NOUN"]}
 {"token":"bare","token_id":6436,"count":1,"POS":["ADJ"]}
 {"token":"empty","token_id":4064,"count":3,"POS":["VERB","ADJ"]}
 {"token":"mansion","token_id":7330,"count":6,"POS":["NOUN"]}
+{"token":"rite","token_id":14034,"count":1,"POS":["NOUN"]}
 {"token":"counsel","token_id":9517,"count":1,"POS":["NOUN"]}
 {"token":"manor","token_id":6952,"count":1,"POS":["NOUN"]}
 {"token":"potent","token_id":16834,"count":1,"POS":["ADJ"]}
