@@ -8,7 +8,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import h5py
+# import h5py
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -18,36 +18,6 @@ from scipy.stats import pearsonr
 
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-
-
-def load_token_data(filepath, token):
-    """
-    Load all step data for a given token from the HDF5 file.
-    
-    Parameters:
-        filepath (str): Path to the HDF5 file.
-        token (str): Token to load data for.
-    
-    Returns:
-        dict: Dictionary containing step data.
-    """
-    token_data = {}
-
-    with h5py.File(filepath, 'r') as f:
-        token_group = f.get(f"{token}")
-        if token_group is None:
-            print(f"No data found for token '{token}'")
-            return token_data
-
-        attentions = defaultdict(list)
-        hidden_states = defaultdict(list)
-        
-        for step in token_group:
-            step_group = token_group[step]
-            attentions[step].append(np.array(step_group["attentions"][:]))
-            hidden_states[step].append(np.array(step_group["hidden_states"][:]))
-
-    return attentions, hidden_states
 
 
 ####################################################################################################
@@ -137,7 +107,7 @@ def plot_surprisals(
     rows = math.ceil(num_words / cols)
 
     plt.style.use('ggplot')
-    fig, axs = plt.subplots(rows, cols, figsize=(cols*3, rows*3))
+    fig, axs = plt.subplots(rows, cols, figsize=(cols*3.4, rows*3.4))
     axs = np.atleast_2d(axs)
 
     correlations = {}
@@ -231,13 +201,13 @@ def plot_surprisals(
             corr, _ = pearsonr(word_data['MeanSurprisal'], word_data['MeanAntisurprisal'])
             correlations[word] = corr
             ax.set_title(f'"{word}"', pad=18)
-            ax.text(0.5, 1.02, f'Pos-Neg Correlation: {corr:.2f}', fontsize=10, ha='center', transform=ax.transAxes)
+            ax.text(0.5, 1.02, f'corrélation: {corr:.2f}', fontsize=10, ha='center', transform=ax.transAxes)
 
         else:
             ax.set_title(f'"{word}"')
         
-        ax.set_xlabel('Step')
-        ax.set_ylabel('Avg. surprisal')
+        ax.set_xlabel('Étape')
+        ax.set_ylabel('Surprise moyenne')
 
         all_metrics[word] = metrics
     
@@ -305,11 +275,11 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
     plt.style.use('ggplot')
     
     if plot_learning_curves and plot_differences:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.5, 3.5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 3.1))
     elif plot_learning_curves:
-        fig, ax1 = plt.subplots(figsize=(5.3, 3.5))
+        fig, ax1 = plt.subplots(figsize=(5, 3.1))
     elif plot_differences:
-        fig, ax2 = plt.subplots(figsize=(5.3, 3.5))
+        fig, ax2 = plt.subplots(figsize=(5, 3.1))
     
     num_words = len(words)
     surprisal_colors = cm.Greens(np.linspace(0.8, 1, num_words))  # Shades of green
@@ -347,7 +317,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
             if show_error_interval:
                 ax1.fill_between(x, y_pos - pos_err, y_pos + pos_err, color=surprisal_colors[i], alpha=0.2)
                 ax1.fill_between(x, y_neg - neg_err, y_neg + neg_err, color=antisurprisal_colors[i], alpha=0.2)
-            legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+            legend = ax1.legend(fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True, title='           Words           ')
             legend_bg_color = legend.get_frame().get_facecolor()
             legend_edge_color = legend.get_frame().get_edgecolor()
             ax1.set_xlabel('Step')
@@ -388,7 +358,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
             mean_surprisal_corr = np.mean(surprisal_corrs)
             mean_antisurprisal_corr = np.mean(antisurprisal_corrs)
             if plot_learning_curves:
-                ax1.text(1.09, 0.5, f"Corr (S) = {mean_surprisal_corr:.2f}\nCorr (AS) = {mean_antisurprisal_corr:.2f}", 
+                ax1.text(1.1, 0.35, f"Corr (S) = {mean_surprisal_corr:.2f}\nCorr (AS) = {mean_antisurprisal_corr:.2f}", 
                          transform=ax1.transAxes, fontsize=9, 
                          bbox=dict(facecolor=legend_bg_color, edgecolor=legend_edge_color, boxstyle='round,pad=0.5'))
 
@@ -409,7 +379,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
 def get_avg_df(dfs: List[pd.DataFrame], column: str):
     avg_dfs = []
     for df in dfs:
-        avg = (df.groupby('Steps')
+        avg = (df.groupby('Step')
                  .agg({column: 'mean'})
                  .reset_index()
                  .assign(Diffs=lambda x: x[column].diff().fillna(0)))
@@ -427,10 +397,10 @@ def plot_avg_pos_neg(positives, negatives, save_as=None):
     colors = ['purple', 'green', 'red']
 
     for i, df in enumerate(positives):
-        plt.plot(df.Steps, df['MeanSurprisal'], marker='o', color=colors[i] if len(positives) > 1 else 'green', label=pos_labels[i])
+        plt.plot(df.Step, df['MeanSurprisal'], marker='o', color=colors[i] if len(positives) > 1 else 'green', label=pos_labels[i])
     
     for i, df in enumerate(negatives):
-        plt.plot(df.Steps, df['MeanAntisurprisal'], marker='o', color=colors[i] if len(negatives) > 1 else 'red', alpha= 0.3, label=neg_labels[i])
+        plt.plot(df.Step, df['MeanAntisurprisal'], marker='o', color=colors[i] if len(negatives) > 1 else 'red', alpha= 0.3, label=neg_labels[i])
 
     # plt.gca().invert_yaxis()
     # plt.xscale('log')
@@ -443,3 +413,104 @@ def plot_avg_pos_neg(positives, negatives, save_as=None):
 
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.show()
+
+####################################################################################################
+
+def plot_avg(surprisals, show_error_interval=False, legend=True, save_as=None):
+    plt.style.use('ggplot')
+    plt.figure(figsize=(3, 3))
+    common_properties = {'marker': 'o', 'errorbar': 'sd' if show_error_interval else None}
+    ax = sns.lineplot(x='Step', y='MeanSurprisal', data=surprisals, color='green', label='Surprise', **common_properties)
+    ax = sns.lineplot(x='Step', y='MeanAntisurprisal', data=surprisals, color='indianred', label='Anti-surprise', **common_properties)
+    ax.set(xlabel='Étape', ylabel='Surprise moyenne')
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    if not legend:
+        ax.get_legend().remove()
+    if save_as:
+        plt.savefig(save_as, bbox_inches='tight')
+    plt.show()
+
+####################################################################################################
+
+def trend_categories(df, first_step=True):
+
+    def determine_trend(values):
+        X = np.arange(len(values)).reshape(-1, 1)
+        model = LinearRegression().fit(X, values)
+        slope = model.coef_[0]
+        return '\u2197' if slope > 0 else '\u2198'
+
+    categories = defaultdict(lambda: [0, []])
+
+    if not first_step:
+        df = df[df['Steps'] != 0]
+        
+    grouped = df.groupby('Token')
+    
+    for word, word_data in grouped:
+        surprisal_values = word_data['MeanSurprisal'].values.reshape(-1, 1)
+        antisurprisal_values = word_data['MeanAntisurprisal'].values.reshape(-1, 1)
+        
+        surprisal_trend = determine_trend(surprisal_values)
+        antisurprisal_trend = determine_trend(antisurprisal_values)
+        
+        key = f"{surprisal_trend} Surprisal - {antisurprisal_trend} Anti-surprisal"
+        categories[key][0] += 1
+        categories[key][1].append(word)
+    
+    return categories
+
+####################################################################################################
+
+class PearsonCorrelationAnalyzer:
+    def __init__(self, surprisals, first_step=True, save_as=""):
+        """
+        Initialize the analyzer with the data, configuration, and save location.
+        """
+        self.surprisals = surprisals.copy()
+        self.first_step = first_step
+        self.save_as = save_as
+        self.correlations = None
+
+    def _get_correlation(self, group):
+        """
+        Compute the Pearson correlation for a given group.
+        """
+        if len(group) < 2:
+            return None
+        corr, _ = pearsonr(group['MeanSurprisal'], group['MeanAntisurprisal'])
+        return corr
+
+    def calculate_correlations(self, return_df=False):
+        """
+        Calculate correlations, excluding the first step if specified.
+        """
+        if not self.first_step:
+            self.surprisals = self.surprisals[self.surprisals['Step'] != 0]
+        self.correlations = (
+            self.surprisals.groupby('Token')
+            .apply(self._get_correlation)
+            .dropna()
+        )
+        self.correlations = pd.DataFrame(self.correlations, columns=['Correlation']).reset_index()
+        if return_df:
+            return self.correlations
+
+    def plot(self):
+        """
+        Plot the distribution of correlations.
+        """
+        if self.correlations is None:
+            raise ValueError("You must calculate correlations before plotting.")
+
+        plt.style.use('ggplot')
+        plt.figure(figsize=(12, 6))
+        sns.displot(data=self.correlations, x='Correlation', kde=True)
+
+        plt.xticks(rotation=45)
+        plt.xlabel('Corrélation')
+        plt.ylabel('Nombre de mots')  # 'Token count'
+
+        if self.save_as:
+            plt.savefig(self.save_as, format='pdf', bbox_inches='tight')
+        plt.show()
