@@ -40,9 +40,6 @@ import string
 import sys
 
 # Third-party imports
-import h5py
-import zarr
-import numpy as np
 import pandas as pd
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -96,55 +93,6 @@ def read_data_to_df(file_path):
     else:
         raise ValueError(f"Unsupported file format: {file_path}")
     return df
-
-
-def save_attn_hs_hdf5(hdf5_file, step, token, attentions, hidden_states):
-    """
-    Save token-specific attentions and hidden states to an HDF5 file.
-
-    Parameters:
-        filepath (str): Path to the HDF5 file.
-        step (int): Current step number.
-        token (str): Token being processed.
-        attentions (np.ndarray): Attention tensor (num_heads, seq_len).
-        hidden_states (np.ndarray): Hidden states tensor (seq_len, hidden_size).
-
-    Example structure:
-        file.h5
-        ├── token1
-        │   ├── step_0001
-        │   │     ├── attentions
-        │   │     └── hidden_states
-        │   └── step_0002
-        │         ├── attentions
-        │         └── hidden_states
-        ├── token2
-        │   └── step_0001
-        │         ├── attentions
-        │         └── hidden_states
-        └── ...
-    """
-    # Create a group for the token if it doesn't exist
-    token_group = hdf5_file.require_group(f"{token}")
-
-    # Create a subgroup for the current step
-    step_group = token_group.require_group(f"step_{step}")
-
-    # Store attentions and hidden states of each batch as separate datasets (variable-length approach)
-    step_group.create_dataset(
-        "attentions",
-        data=attentions,
-        dtype=np.float32,
-        compression="gzip"
-    )
-    step_group.create_dataset(
-        "hidden_states",
-        data=hidden_states,
-        dtype=np.float32,
-        compression="gzip"
-    )
-
-    print(f"Saved data for token '{token}' at step {step} to {hdf5_file}")
 
 
 def get_sample_sentences(tokenizer, wordbank_file, examples_file,
@@ -427,7 +375,11 @@ def main(args):
             tokenizer, args.wordbank_file, args.examples_file, max_seq_len, 
             args.min_seq_len, args.max_samples, bidirectional=bidirectional)
         if args.save_samples != "":
-            pickle.dump(token_data, open(args.save_samples, "wb"))
+            try:
+                pickle.dump(token_data, open(args.save_samples, "wb"))
+            except FileNotFoundError:
+                os.makedirs(os.path.dirname(args.save_samples))
+                pickle.dump(token_data, open(args.save_samples, "wb"))
 
     # Prepare for evaluation.
     outfile = codecs.open(args.output_file, 'w', encoding='utf-8')
@@ -450,8 +402,7 @@ def main(args):
         os.makedirs(args.attn_hs_dir)
     
     # Get checkpoints & Run evaluation.
-    # steps = list(range(0, 200_000, 20_000)) + list(range(200_000, 2_100_000, 100_000))
-    steps = [0]
+    steps = list(range(0, 200_000, 20_000)) + list(range(200_000, 2_100_000, 100_000))
     for step in steps:
         checkpoint = args.model + f"-step_{step//1000}k"
         model = load_single_model(checkpoint, config, tokenizer, args.model_type)
