@@ -2,22 +2,31 @@
 This script visualizes the attention and hidden states of a transformer model over time.
 
 Usage:
-python analysis/attn_hs_visualization.py \
+python src/attn_hs_visualization.py \
 --attn_hs_dir <directory> \
+--save_path <path> \
+--tokenizer <tokenizer> \
 --token <token> \
 --batch <batch_index> \
 --visualize <attn|hidden> \
---save_path <path>
+--animate
 
 Example:
-python analysis/attn_hs_visualization.py \
+python src/attn_hs_visualization.py \
 --attn_hs_dir results/attn_hs \
---token "assistance" \
+--save_path img/assistance_attn_anim.gif \
 --tokenizer "google/multiberts-seed_0" \
+--token "assistance" \
 --batch 0 \
 --visualize attn \
---animate \
---save_path img/assistance_attn_anim.gif
+--animate
+
+python src/attn_hs_visualization.py \
+--attn_hs_dir results/attn_hs \
+--save_path img/aid_hs_evolution.pdf \
+--tokenizer "google/multiberts-seed_0" \
+--token "aid" \
+--plot_evolution \
 """
 
 import argparse
@@ -26,7 +35,9 @@ import matplotlib.animation as animation
 from matplotlib.animation import PillowWriter
 import matplotlib.gridspec as gridspec
 import seaborn as sns
+from sklearn.decomposition import PCA
 import numpy as np
+from typing import List
 import torch
 from tqdm import tqdm
 import os
@@ -39,13 +50,14 @@ anim = None
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--attn_hs_dir', type=str, required=True, help='Directory containing attention and hidden states')
+    parser.add_argument('--save_path', type=str, required=True, help='Path to save the figure')
     parser.add_argument('--token', type=str, required=True, help='Token to visualize')
     parser.add_argument('--tokenizer', type=str, required=True, help='Tokenizer to convert token IDs to token names')
     parser.add_argument('--batch_idx', type=int, default=0, help='Batch index (sentence) to visualize')
     # Flag to select whether to visualize the attention or the hidden states
     parser.add_argument('--visualize', type=str, choices=['attn', 'hidden'], default='attn', help='Type of visualization')
-    parser.add_argument('--save_path', type=str, default='animation.gif', help='Path to save the animation')
     parser.add_argument('--animate', action='store_true', help='Create an animation')
+    parser.add_argument('--plot_evolution', action='store_true', help='Plot curves of hidden states over time')
     return parser
 
 
@@ -58,7 +70,7 @@ def load_data(attn_hs_dir, token, tokenizer, batch_idx):
         return []
     sorted_files = sorted(files, key=lambda x: int(x.split("_step_")[-1].split(".bin")[0]))
 
-    data = []
+    data = []   # List of dictionaries to hold data for each step
     for f in tqdm(sorted_files, desc="Loading files"):
         obj = torch.load(f, weights_only=True)
         # Densify the sparse attention tensor and dequantize
@@ -66,7 +78,7 @@ def load_data(attn_hs_dir, token, tokenizer, batch_idx):
         # Get the key tokens for the attention head
         key_tokens = tokenizer.convert_ids_to_tokens(obj['TokenIDs'][batch_idx])
         seq_len = len(key_tokens)
-        data.append({
+        data.append({   
             'step': obj['Step'],
             'token': obj['Token'],
             'key_tokens': key_tokens,
@@ -82,7 +94,7 @@ def animate_data(data, args):
     global anim
 
     # Set the figure size based on the number of tokens
-    token_count = max(len(d['key_tokens']) for d in data)
+    token_count = max(len(step_data['key_tokens']) for step_data in data)
     width = max(token_count, 10) # if args.visualize == 'attn' else 10  # 0.6 inch per token, min 6 inches
     height = max(2 * data[0]['attn'].shape[0], 8) if args.visualize == 'attn' else 8
 
@@ -146,6 +158,18 @@ def animate_data(data, args):
     print(f"Animation saved to {args.save_path}")
 
 
+def hs_norm_trajectory(data:List[dict], args):
+    """
+    Plot the changes in representation over time.
+    """
+    steps, hs_norms = zip(*[(d['step'], np.linalg.norm(d['hs'])) for d in data])
+    plt.plot(steps, hs_norms)
+    plt.title(f'Hidden State Norm for Token "{args.token}"')
+    plt.xlabel('Steps')
+    plt.savefig(args.save_path, format='pdf', bbox_inches='tight')
+    print(f"Figure saved to {args.save_path}")
+
+
 def main(args):
     # Set the style for seaborn
     sns.set_theme(style="whitegrid")
@@ -156,6 +180,9 @@ def main(args):
 
     if args.animate:
         animate_data(data, args)
+
+    if args.plot_evolution:
+        hs_norm_trajectory(data, args)
 
 
 if __name__ == "__main__":
