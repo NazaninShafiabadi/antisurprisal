@@ -325,7 +325,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
 
     # Compute correlation and/or difference curves (if enabled)
     if (plot_differences or compute_corr) and len(surprisal_curves) > 1:
-        surprisal_matrix = np.array(surprisal_curves)
+        surprisal_matrix = np.array(surprisal_curves)           # shape: [num_words, num_steps]
         antisurprisal_matrix = np.array(antisurprisal_curves)
 
         steps = surprisals_df['Step'].unique()
@@ -350,7 +350,7 @@ def compare(words: List[str], surprisals_df, compute_corr: bool = False, plot_le
                     ax2.legend(handles=handles, fontsize=9, bbox_to_anchor=(1.05, 1), loc='upper left') 
 
                 if compute_corr:
-                    # Correlation between surprisal curves and antisurprisal curves
+                    # Correlation between surprisal curves and antisurprisal curves (separately)
                     surprisal_corrs.append(pearsonr(surprisal_matrix[i], surprisal_matrix[j])[0])
                     antisurprisal_corrs.append(pearsonr(antisurprisal_matrix[i], antisurprisal_matrix[j])[0])
 
